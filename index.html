@@ -1,0 +1,1550 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Plataforma de ensino de mecânica automotiva com motor 3D interativo, aulas, simulador de diagnóstico e ferramentas.">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>Oficina Escola 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: oficina-laboratório escura — faixas largas com miolo de 1200px; páginas de estudo com barra lateral; laboratório em tela dividida (viewport 3D + painel técnico) */
+:root{
+  --bg:#0b0e12; --bg2:#11161c; --panel:#161c24; --panel2:#1c2430; --line:#26313d; --line2:#33414f;
+  --fg:#eef2f6; --muted:#93a1b0; --dim:#677686;
+  --blue:#2f8cff; --blue-soft:rgba(47,140,255,.14); --orange:#ff7a1a; --orange-soft:rgba(255,122,26,.14);
+  --ok:#3ecf8e; --warn:#ffb020; --bad:#ff5a5f;
+  --gas-mix:#4fb3ff; --gas-comp:#8b7bff; --gas-burn:#ff7a1a; --gas-exh:#8d939c; --oil:#e0a43a;
+  --f-display:"Saira Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f-body);font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--blue)}
+h1,h2,h3,h4{font-family:var(--f-display);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:.005em}
+h2{font-size:clamp(28px,3.4vw,40px);font-weight:700}
+h3{font-size:22px;font-weight:700}
+h4{font-size:17px;font-weight:600}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}
+.muted{color:var(--muted)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--panel);padding:10px 16px;border-radius:8px;cursor:pointer;text-decoration:none;color:var(--fg);font-weight:500;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:#1f7aea}
+.btn.orange{background:var(--orange);border-color:var(--orange);color:#160a00}
+.btn.sm{padding:6px 11px;font-size:13.5px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:5px;border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:rgba(62,207,142,.4)}
+.chip.blue{color:var(--blue);border-color:rgba(47,140,255,.45)}
+.chip.orange{color:var(--orange);border-color:rgba(255,122,26,.45)}
+.chip.warn{color:var(--warn);border-color:rgba(255,176,32,.4)}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(11,14,18,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:18px;height:62px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--fg);font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:.02em;white-space:nowrap}
+.brand svg{flex:none}
+.brand span{color:var(--orange)}
+nav.main{display:flex;gap:2px;flex:1;min-width:0}
+nav.main a{color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:7px;font-size:14px;white-space:nowrap}
+nav.main a:hover{color:var(--fg);background:var(--panel)}
+nav.main a.on{color:var(--fg);background:var(--panel2);box-shadow:inset 0 -2px 0 var(--blue)}
+.search{position:relative;width:240px;flex:none}
+.search input{width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:8px 12px 8px 32px;font-size:14px}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--dim)}
+.results{position:absolute;right:0;top:calc(100% + 6px);width:min(420px,92vw);background:var(--panel);border:1px solid var(--line2);border-radius:10px;max-height:60vh;overflow:auto;box-shadow:0 18px 40px rgba(0,0,0,.5);padding:6px}
+.results a{display:block;padding:9px 10px;border-radius:7px;text-decoration:none;color:var(--fg)}
+.results a:hover,.results a.hl{background:var(--panel2)}
+.results small{display:block;color:var(--muted);font-size:12.5px}
+.menu-btn{display:none;background:none;border:1px solid var(--line2);border-radius:8px;padding:7px 9px;cursor:pointer}
+@media (max-width:1100px){
+  nav.main{display:none;position:absolute;left:0;right:0;top:62px;flex-direction:column;background:var(--bg2);border-bottom:1px solid var(--line);padding:8px max(16px,env(safe-area-inset-left,0px))}
+  nav.main.open{display:flex}
+  .menu-btn{display:block;margin-left:auto}
+  .search{width:200px}
+}
+@media (max-width:560px){.search{width:auto;flex:1}.brand b{display:none}.top .wrap{gap:10px}}
+
+section.view{display:none}
+section.view.on{display:block}
+
+/* HERO */
+.hero{position:relative;border-bottom:1px solid var(--line);overflow:hidden;
+  background:
+   radial-gradient(900px 500px at 75% 40%,rgba(47,140,255,.13),transparent 60%),
+   linear-gradient(var(--bg),var(--bg));}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(147,161,176,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(147,161,176,.06) 1px,transparent 1px);background-size:40px 40px;mask-image:linear-gradient(90deg,transparent,#000 45%,#000);pointer-events:none}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1fr 1.1fr;gap:24px;align-items:center;padding-block:56px 40px}
+.hero h1{font-size:clamp(42px,6.2vw,84px);font-weight:800;line-height:.92;letter-spacing:-.005em;text-transform:uppercase}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.hero .sub{margin-top:20px;max-width:52ch;color:#c4cdd6;font-size:17px}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.hero-stage{position:relative;height:460px;min-width:0}
+.hero-stage .viewer{position:absolute;inset:0}
+.hud{position:absolute;font-family:var(--f-mono);font-size:11.5px;color:var(--muted);letter-spacing:.05em;pointer-events:none}
+.hud b{color:var(--fg);font-weight:500}
+.hero-stats{display:flex;gap:28px;margin-top:34px;flex-wrap:wrap}
+.hero-stats div{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.hero-stats b{display:block;font-family:var(--f-display);font-size:30px;color:var(--fg);letter-spacing:0;font-weight:700}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr;padding-block:36px 24px}.hero-stage{height:320px}}
+
+.band{padding-block:64px;border-bottom:1px solid var(--line)}
+.band.alt{background:var(--bg2)}
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+.sec-head p{max-width:58ch;color:var(--muted);margin-top:8px}
+
+/* trilhas */
+.trails{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.trail{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:10px}
+.trail .lv{font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.trail h3{font-size:24px}
+.trail p{color:var(--muted);font-size:14.5px;flex:1}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),#5fb0ff);border-radius:4px;transition:width .4s}
+.trail .meta{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+@media (max-width:980px){.trails{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.trails{grid-template-columns:1fr}}
+
+/* mapa do carro */
+.carmap{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;align-items:stretch}
+.carbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.carbox svg{width:100%;height:auto;display:block}
+.hot{cursor:pointer}
+.hot .hs{fill:rgba(47,140,255,.08);stroke:var(--blue);stroke-width:1.5;stroke-dasharray:4 3;transition:fill .15s}
+.hot:hover .hs,.hot.on .hs{fill:rgba(255,122,26,.22);stroke:var(--orange);stroke-dasharray:none}
+.hot text{fill:var(--fg);font-family:var(--f-mono);font-size:12px;pointer-events:none}
+.sysinfo{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:flex;flex-direction:column;gap:12px}
+.syschips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.syschips button{background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer}
+.syschips button.on{border-color:var(--orange);color:var(--orange)}
+@media (max-width:900px){.carmap{grid-template-columns:1fr}}
+
+/* caminho do torque */
+.path{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:22px;position:relative}
+.path .st{position:relative;padding:14px 12px 12px;border:1px solid var(--line);background:var(--panel);margin-left:-1px;min-width:0;cursor:pointer;transition:background .2s}
+.path .st:first-child{border-radius:var(--r) 0 0 var(--r);margin-left:0}
+.path .st:last-child{border-radius:0 var(--r) var(--r) 0}
+.path .st b{display:block;font-family:var(--f-display);font-size:17px}
+.path .st small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:4px}
+.path .st .n{font-family:var(--f-mono);font-size:11px;color:var(--dim)}
+.path .st.on{background:var(--blue-soft);border-color:var(--blue);z-index:1}
+.path-note{margin-top:14px;padding:14px 16px;border-left:3px solid var(--blue);background:var(--panel);border-radius:0 8px 8px 0;font-size:15px;min-height:52px}
+@media (max-width:820px){.path{grid-template-columns:1fr 1fr}.path .st{margin:0;border-radius:0!important}}
+
+/* features */
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feat{border-top:2px solid var(--line2);padding-top:16px}
+.feat .k{font-family:var(--f-mono);font-size:12px;color:var(--orange);letter-spacing:.08em;text-transform:uppercase}
+.feat h3{margin:6px 0 8px}
+.feat p{color:var(--muted);font-size:14.5px}
+.feat a{display:inline-block;margin-top:10px;font-size:14px}
+@media (max-width:800px){.features{grid-template-columns:1fr}}
+
+/* níveis */
+.levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.lvl{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;text-decoration:none;color:var(--fg);transition:border-color .15s}
+.lvl:hover{border-color:var(--blue)}
+.lvl .top-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.lvl .num{font-family:var(--f-display);font-size:34px;font-weight:800;color:var(--line2);line-height:1}
+.lvl h4{font-size:18px}
+.lvl p{color:var(--muted);font-size:13.5px}
+
+/* CURSOS */
+.study{display:grid;grid-template-columns:290px 1fr;gap:0;min-height:calc(100vh - 62px)}
+.side{border-right:1px solid var(--line);background:var(--bg2);padding:20px 14px;position:sticky;top:calc(62px + env(safe-area-inset-top,0px));height:calc(100vh - 62px);overflow:auto}
+.side h4{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:14px 8px 6px}
+.side a{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:7px 10px;border-radius:7px;color:var(--muted);text-decoration:none;font-size:14px}
+.side a:hover{background:var(--panel);color:var(--fg)}
+.side a.on{background:var(--panel2);color:var(--fg)}
+.side a .dot{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--line2);flex:none}
+.side a .dot.done{background:var(--ok);border-color:var(--ok)}
+.side a.lesson{padding-left:22px;font-size:13.5px}
+.side .soon{font-size:11px;color:var(--dim);font-family:var(--f-mono)}
+.study-main{min-width:0;padding:32px max(16px,env(safe-area-inset-right,0px)) 80px 40px}
+.side-toggle{display:none}
+@media (max-width:900px){
+  .study{grid-template-columns:1fr}
+  .side{position:static;height:auto;display:none;border-right:none;border-bottom:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .side.open{display:block}
+  .side-toggle{display:flex;margin:12px max(16px,env(safe-area-inset-left,0px)) 0}
+  .study-main{padding:20px max(16px,env(safe-area-inset-right,0px)) 60px max(16px,env(safe-area-inset-left,0px))}
+}
+
+.lesson{max-width:800px}
+.lesson-head{display:flex;flex-direction:column;gap:10px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.lesson-head h2{font-size:clamp(30px,4vw,44px)}
+.lesson-head .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.blk{padding-block:22px;border-bottom:1px solid var(--line)}
+.blk > .lab{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--blue);margin-bottom:10px}
+.blk > .lab i{font-style:normal;color:var(--dim)}
+.blk p+p,.blk p+ul,.blk ul+p,.blk p+.formula,.blk .formula+p,.blk p+table,.blk table+p{margin-top:12px}
+.blk ul,.blk ol{margin:0;padding-left:20px}
+.blk li+li{margin-top:6px}
+.blk h4{margin:18px 0 8px}
+.term{border-bottom:1px dashed var(--orange);cursor:help}
+.formula{font-family:var(--f-mono);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-size:15px;overflow-x:auto;white-space:nowrap}
+.formula small{display:block;color:var(--muted);font-size:12.5px;white-space:normal;margin-top:4px}
+.note{border-left:3px solid var(--warn);background:rgba(255,176,32,.07);padding:12px 14px;border-radius:0 8px 8px 0;font-size:14.5px;margin-top:12px}
+.note.safety{border-color:var(--bad);background:rgba(255,90,95,.07)}
+.note.didatic{border-color:var(--gas-comp);background:rgba(139,123,255,.07)}
+.note b{font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:3px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.summary div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:14.5px}
+.summary b{color:var(--orange);font-family:var(--f-display);font-size:16px;display:block}
+@media (max-width:600px){.summary{grid-template-columns:1fr}}
+
+.quiz .q{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:12px}
+.quiz .q p{font-weight:500}
+.quiz .opts{display:grid;gap:6px;margin-top:10px}
+.quiz label{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;cursor:pointer;font-size:14.5px}
+.quiz label:hover{border-color:var(--blue)}
+.quiz input{margin-top:4px;accent-color:var(--blue)}
+.quiz label.right{border-color:var(--ok);background:rgba(62,207,142,.08)}
+.quiz label.wrong{border-color:var(--bad);background:rgba(255,90,95,.08)}
+.quiz .fb{margin-top:10px;font-size:14px;color:var(--muted);display:none}
+.quiz.checked .fb{display:block}
+.quiz .res{margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.lesson-nav{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:26px}
+
+.widget{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:12px}
+.widget svg{width:100%;height:auto;display:block}
+.slider-row{display:grid;grid-template-columns:150px 1fr 100px;gap:12px;align-items:center;margin-top:10px;font-size:14px}
+.slider-row input[type=range]{width:100%;accent-color:var(--blue)}
+.slider-row output{font-family:var(--f-mono);text-align:right}
+@media (max-width:560px){.slider-row{grid-template-columns:1fr 90px}.slider-row label{grid-column:1/-1}}
+.readout{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.readout div{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.readout small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.readout b{font-family:var(--f-mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* LAB */
+.lab-shell{display:grid;grid-template-columns:1fr 380px;height:calc(100vh - 62px);min-height:560px}
+.lab-stage{position:relative;min-width:0;background:radial-gradient(800px 500px at 50% 45%,#141b25,#0a0d11)}
+.lab-stage .viewer{position:absolute;inset:0}
+.lab-top{position:absolute;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;pointer-events:none}
+.lab-top > *{pointer-events:auto}
+.stroke-card{background:rgba(17,22,28,.88);border:1px solid var(--line2);border-radius:10px;padding:10px 14px;backdrop-filter:blur(6px)}
+.stroke-card .name{font-family:var(--f-display);font-size:24px;font-weight:700;line-height:1.1}
+.stroke-card .desc{font-size:13px;color:var(--muted);max-width:36ch}
+.cyls{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.cyls span{font-family:var(--f-mono);font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid var(--line2)}
+.legend{display:flex;flex-direction:column;gap:5px;font-size:12px;background:rgba(17,22,28,.88);border:1px solid var(--line2);border-radius:10px;padding:10px 12px}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.lab-bottom{position:absolute;left:14px;right:14px;bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(17,22,28,.9);border:1px solid var(--line2);border-radius:10px;padding:10px;backdrop-filter:blur(6px)}
+.lab-bottom .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.lab-bottom .sep{width:1px;height:26px;background:var(--line2)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.seg button{background:none;border:none;padding:6px 9px;font-size:12.5px;font-family:var(--f-mono);cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--blue);color:#fff}
+.lab-bottom label{font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.lab-bottom input[type=range]{width:100px;accent-color:var(--orange)}
+.angle{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);margin-left:auto}
+.angle b{color:var(--fg);font-weight:500}
+.lab-panel{border-left:1px solid var(--line);background:var(--bg2);overflow:auto;padding:20px}
+.lab-panel .tabs{display:flex;gap:4px;margin-bottom:16px}
+.lab-panel .tabs button{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:7px;font-size:13px;cursor:pointer;color:var(--muted)}
+.lab-panel .tabs button.on{color:var(--fg);border-color:var(--blue)}
+.toggles{display:grid;gap:6px}
+.toggles label{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:7px;font-size:14px;cursor:pointer}
+.toggles input{accent-color:var(--blue);width:16px;height:16px}
+.partlist{display:grid;gap:4px;margin-top:6px}
+.partlist button{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:8px 11px;font-size:14px;cursor:pointer}
+.partlist button:hover,.partlist button.on{border-color:var(--orange)}
+.pinfo h3{font-size:28px}
+.pinfo dl{margin:14px 0 0;display:grid;gap:14px}
+.pinfo dt{font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);margin-bottom:3px}
+.pinfo dd{margin:0;font-size:14.5px;color:#d4dbe2}
+.pinfo ul{margin:0;padding-left:18px}
+.guided{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:14px}
+.guided .gstep{font-family:var(--f-mono);font-size:11.5px;color:var(--orange)}
+.webgl-fail{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted)}
+@media (max-width:980px){
+  .lab-shell{grid-template-columns:1fr;height:auto}
+  .lab-stage{height:68vh;min-height:440px}
+  .lab-panel{border-left:none;border-top:1px solid var(--line)}
+  .legend{display:none}
+  .lab-bottom .sep{display:none}
+  .angle{margin-left:0;width:100%}
+}
+
+/* SIM */
+.sim{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start}
+.vcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:sticky;top:80px}
+.vcard h3{font-size:22px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:12px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--f-mono);font-size:13.5px}
+.score{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.score .big{font-family:var(--f-display);font-size:46px;font-weight:800;line-height:1}
+.score .big small{font-size:18px;color:var(--muted)}
+.scorelog{margin-top:10px;font-size:13px;display:grid;gap:4px;max-height:220px;overflow:auto}
+.scorelog div{display:flex;justify-content:space-between;gap:10px;color:var(--muted)}
+.scorelog b.p{color:var(--ok)}
+.scorelog b.n{color:var(--bad)}
+.stepper{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px}
+.stepper button{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:7px 12px;font-size:13.5px;cursor:pointer;color:var(--muted)}
+.stepper button.on{color:var(--fg);border-color:var(--blue);background:var(--panel2)}
+.stepper button.done::before{content:"✓ ";color:var(--ok)}
+.simpane{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;min-width:0}
+.simpane h3{margin-bottom:10px}
+.dtc{display:flex;gap:14px;align-items:flex-start;padding:12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg2);margin-top:10px}
+.dtc .code{font-family:var(--f-mono);font-size:22px;color:var(--warn)}
+.livedata{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-top:12px}
+.livedata div{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.livedata small{display:block;font-size:11.5px;color:var(--muted);font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.05em}
+.livedata b{font-family:var(--f-mono);font-size:19px;font-weight:500}
+.livedata .alert b{color:var(--warn)}
+.tests{display:grid;gap:8px;margin-top:12px}
+.test{border:1px solid var(--line2);border-radius:8px;padding:12px 14px;background:var(--bg2)}
+.test .row{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.test .result{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2);font-size:14px}
+.test.used{border-color:var(--line)}
+.choice{display:grid;gap:8px;margin-top:12px}
+.choice button{text-align:left;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;cursor:pointer;font-size:14.5px}
+.choice button:hover{border-color:var(--blue)}
+.choice button.right{border-color:var(--ok);background:rgba(62,207,142,.08)}
+.choice button.wrong{border-color:var(--bad);background:rgba(255,90,95,.08)}
+.fbk{margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--bg2);border:1px solid var(--line2);font-size:14.5px}
+.simbanner{display:flex;gap:10px;align-items:center;padding:10px 14px;border:1px dashed var(--line2);border-radius:8px;font-size:13.5px;color:var(--muted);margin-bottom:18px}
+@media (max-width:900px){.sim{grid-template-columns:1fr}.vcard{position:static}}
+
+/* TOOLS */
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0}
+.tool h3{margin-bottom:4px}
+.tool .desc{color:var(--muted);font-size:14px;margin-bottom:12px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.field input,.field select{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:7px;padding:8px 10px;font-family:var(--f-mono);font-size:14px}
+.out{margin-top:14px;padding:12px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:8px}
+.out .v{font-family:var(--f-mono);font-size:22px;color:var(--orange)}
+.out p{font-size:13px;color:var(--muted);margin-top:6px}
+@media (max-width:860px){.tools{grid-template-columns:1fr}}
+
+/* GLOSS */
+.gloss-tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.gloss-tools input{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:10px 14px}
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.gterm{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.gterm b{font-family:var(--f-display);font-size:18px}
+.gterm p{color:#cbd3db;font-size:14px;margin-top:4px}
+.gterm .cat{float:right}
+
+/* PROGRESSO */
+.prog-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.pbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0}
+.plevel{display:grid;grid-template-columns:44px 1fr 70px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.plevel .n{font-family:var(--f-display);font-weight:800;font-size:22px;color:var(--dim)}
+.hist{display:grid;gap:6px;font-size:13.5px;max-height:320px;overflow:auto}
+.hist div{display:flex;gap:10px;color:var(--muted)}
+.hist time{font-family:var(--f-mono);font-size:12px;color:var(--dim);flex:none}
+@media (max-width:860px){.prog-grid{grid-template-columns:1fr}}
+
+footer{padding-block:40px;color:var(--muted);font-size:13.5px}
+footer .wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:24px}
+@media (max-width:760px){footer .wrap{grid-template-columns:1fr}}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio" aria-label="Oficina Escola 3D — início">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#ff7a1a" stroke-width="3"/><circle cx="16" cy="16" r="4" fill="#2f8cff"/><path d="M16 3v6M16 23v6M3 16h6M23 16h6" stroke="#ff7a1a" stroke-width="3"/></svg>
+      <b>OFICINA<span>ESCOLA</span>3D</b>
+    </a>
+    <nav class="main" id="nav">
+      <a href="#inicio" data-r="inicio">Início</a>
+      <a href="#cursos" data-r="cursos">Cursos</a>
+      <a href="#nivel-1" data-r="nivel-1">Fundamentos</a>
+      <a href="#nivel-2" data-r="nivel-2">Motores</a>
+      <a href="#sistemas" data-r="sistemas">Sistemas</a>
+      <a href="#laboratorio" data-r="laboratorio">Laboratório 3D</a>
+      <a href="#simulador" data-r="simulador">Simulador</a>
+      <a href="#ferramentas" data-r="ferramentas">Ferramentas</a>
+      <a href="#glossario" data-r="glossario">Glossário</a>
+      <a href="#progresso" data-r="progresso">Meu aprendizado</a>
+    </nav>
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Buscar peça, aula, código…" aria-label="Busca global" autocomplete="off">
+      <div class="results" id="qres" hidden></div>
+    </div>
+    <button class="menu-btn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</header>
+
+<main>
+<!-- INÍCIO -->
+<section class="view" id="v-inicio">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Centro de treinamento automotivo digital</div>
+        <h1 style="margin-top:14px">Domine a mecânica <em>automotiva.</em></h1>
+        <p class="sub">Do primeiro parafuso à engenharia dos sistemas automotivos. Aprenda como os carros funcionam por dentro, explore motores em 3D e desenvolva habilidades de diagnóstico profissional.</p>
+        <div class="ctas">
+          <a class="btn primary" href="#aula-n1-sistemas">Começar a aprender</a>
+          <a class="btn orange" href="#laboratorio">Explorar laboratório 3D</a>
+          <a class="btn" href="#trilhas">Ver trilhas de aprendizagem</a>
+        </div>
+        <div class="hero-stats">
+          <div><b>11</b>níveis</div>
+          <div><b id="statLessons">5</b>aulas completas</div>
+          <div><b>13</b>peças no laboratório</div>
+          <div><b>1</b>caso de diagnóstico</div>
+        </div>
+      </div>
+      <div class="hero-stage">
+        <div class="viewer" id="heroViewer"></div>
+        <div class="hud" style="left:8px;top:8px">MOTOR 4 CIL. EM LINHA · ORDEM 1-3-4-2</div>
+        <div class="hud" style="right:8px;bottom:8px" id="heroHud">CIL. 1 · <b>ADMISSÃO</b></div>
+        <div class="hud" style="left:8px;bottom:8px">ARRASTE PARA GIRAR</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band" id="trilhas">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><div class="eyebrow">Trilhas</div><h2 style="margin-top:8px">Quatro trilhas, do zero ao profissional</h2>
+        <p>Cada trilha agrupa níveis do curso. Você pode seguir a ordem sugerida ou pular para o que precisa.</p></div>
+      </div>
+      <div class="trails" id="trailsBox"></div>
+    </div>
+  </div>
+
+  <div class="band alt" id="sistemas">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><div class="eyebrow">Como funciona um carro?</div><h2 style="margin-top:8px">Mapa do veículo</h2>
+        <p>Toque em uma região do carro para ver o que cada sistema faz e por onde começar a estudá-lo. A vista é esquemática: os sistemas em 3D completo ficam no laboratório.</p></div>
+      </div>
+      <div class="carmap">
+        <div class="carbox">
+          <svg viewBox="0 0 760 330" role="img" aria-label="Vista lateral esquemática de um carro com regiões clicáveis">
+            <path d="M40 228 L70 170 Q90 150 140 145 L250 140 Q300 95 360 82 L520 80 Q570 82 610 135 L690 150 Q730 160 730 200 L730 228 Z" fill="#161c24" stroke="#33414f" stroke-width="2"/>
+            <path d="M268 140 Q310 102 362 94 L430 92 L430 140 Z" fill="#11161c" stroke="#33414f"/>
+            <path d="M442 92 L516 92 Q556 96 590 138 L442 140 Z" fill="#11161c" stroke="#33414f"/>
+            <line x1="40" y1="228" x2="730" y2="228" stroke="#33414f" stroke-width="2"/>
+            <circle cx="160" cy="232" r="46" fill="#0b0e12" stroke="#5a6877" stroke-width="10"/><circle cx="160" cy="232" r="16" fill="#26313d"/>
+            <circle cx="600" cy="232" r="46" fill="#0b0e12" stroke="#5a6877" stroke-width="10"/><circle cx="600" cy="232" r="16" fill="#26313d"/>
+            <line x1="20" y1="282" x2="740" y2="282" stroke="#26313d" stroke-width="2" stroke-dasharray="6 6"/>
+            <g class="hot" data-sys="motor"><rect class="hs" x="72" y="150" width="128" height="62" rx="6"/><text x="84" y="186">MOTOR</text></g>
+            <g class="hot" data-sys="arrefecimento"><rect class="hs" x="40" y="166" width="28" height="56" rx="4"/><text x="18" y="160">RADIADOR</text></g>
+            <g class="hot" data-sys="eletrico"><rect class="hs" x="206" y="150" width="54" height="34" rx="4"/><text x="208" y="141">BATERIA</text></g>
+            <g class="hot" data-sys="transmissao"><rect class="hs" x="206" y="190" width="110" height="30" rx="4"/><text x="214" y="210">CÂMBIO</text></g>
+            <g class="hot" data-sys="direcao"><rect class="hs" x="292" y="112" width="70" height="40" rx="4"/><text x="296" y="136">DIREÇÃO</text></g>
+            <g class="hot" data-sys="alimentacao"><rect class="hs" x="470" y="188" width="92" height="32" rx="4"/><text x="480" y="208">TANQUE</text></g>
+            <g class="hot" data-sys="freios"><rect class="hs" x="575" y="208" width="50" height="50" rx="25"/><text x="575" y="300">FREIOS</text></g>
+            <g class="hot" data-sys="suspensao"><rect class="hs" x="118" y="250" width="84" height="22" rx="4"/><text x="104" y="300">SUSPENSÃO</text></g>
+          </svg>
+          <div class="syschips" id="sysChips"></div>
+        </div>
+        <div class="sysinfo" id="sysInfo"></div>
+      </div>
+
+      <div style="margin-top:44px">
+        <h3>O caminho do torque</h3>
+        <p class="muted" style="margin-top:6px;max-width:64ch">A energia do combustível percorre uma cadeia de peças até virar movimento das rodas. Toque em cada etapa.</p>
+        <div class="path" id="torquePath"></div>
+        <div class="path-note" id="torqueNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Na plataforma</div><h2 style="margin-top:8px">Estude, explore, diagnostique</h2></div></div>
+      <div class="features">
+        <div class="feat"><div class="k">Aulas</div><h3>Aulas com estrutura de escola técnica</h3><p>Objetivo, pré-requisitos, explicação simples e técnica, visualização interativa, falhas comuns, diagnóstico guiado, questionário e desafio prático.</p><a href="#cursos">Ver catálogo →</a></div>
+        <div class="feat"><div class="k">Laboratório 3D</div><h3>Motor em corte que funciona</h3><p>Pistões, bielas, virabrequim, comando e válvulas sincronizados. Pause, avance tempo a tempo, oculte peças e clique em qualquer componente.</p><a href="#laboratorio">Abrir laboratório →</a></div>
+        <div class="feat"><div class="k">Simulador</div><h3>Casos de oficina com pontuação</h3><p>Receba a queixa, leia códigos, escolha testes e chegue à causa raiz. A pontuação premia raciocínio, segurança e confirmação do reparo.</p><a href="#simulador">Iniciar caso →</a></div>
+        <div class="feat"><div class="k">Ferramentas</div><h3>Calculadoras com fórmula à vista</h3><p>Cilindrada, taxa de compressão, relação de transmissão, potência por torque e conversor de unidades, sempre com unidades e exemplos.</p><a href="#ferramentas">Usar ferramentas →</a></div>
+        <div class="feat"><div class="k">Referência</div><h3>Glossário e códigos OBD-II</h3><p>Termos explicados em linguagem direta e códigos genéricos com o que significam e o que eles não provam.</p><a href="#glossario">Abrir glossário →</a></div>
+        <div class="feat"><div class="k">Progresso</div><h3>Seu caminho registrado</h3><p>Aulas concluídas, notas dos questionários e melhor pontuação no simulador ficam salvas neste navegador.</p><a href="#progresso">Meu aprendizado →</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band alt" id="sobre">
+    <div class="wrap">
+      <div class="sec-head"><div><div class="eyebrow">Sobre a plataforma</div><h2 style="margin-top:8px">Como o conteúdo é tratado</h2></div></div>
+      <div class="features">
+        <div class="feat"><div class="k">Fato × simplificação</div><p>Quando uma explicação simplifica a realidade (como o diagrama de válvulas sem cruzamento), a aula sinaliza com um aviso “simplificação didática”.</p></div>
+        <div class="feat"><div class="k">Sem especificações inventadas</div><p>Valores como tolerâncias, torques de aperto e pressões variam por motor. Aqui eles aparecem como exemplos identificados; no serviço real vale o manual do fabricante.</p></div>
+        <div class="feat"><div class="k">Segurança primeiro</div><p>Freios, combustível, airbags e alta tensão exigem treinamento e ferramentas próprias. As aulas indicam quando a atividade não é para iniciantes.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CURSOS -->
+<section class="view" id="v-cursos">
+  <div class="study">
+    <button class="btn sm side-toggle" id="sideToggle">Módulos e aulas ▾</button>
+    <aside class="side" id="side"></aside>
+    <div class="study-main" id="studyMain"></div>
+  </div>
+</section>
+
+<!-- LAB -->
+<section class="view" id="v-laboratorio">
+  <div class="lab-shell">
+    <div class="lab-stage">
+      <div class="viewer" id="labViewer"></div>
+      <div class="lab-top">
+        <div class="stroke-card">
+          <div class="eyebrow" style="font-size:11px">Cilindro 1</div>
+          <div class="name" id="strokeName">Admissão</div>
+          <div class="desc" id="strokeDesc"></div>
+          <div class="cyls" id="cylChips"></div>
+        </div>
+        <div class="legend" aria-label="Legenda de cores">
+          <span><i style="background:var(--gas-mix)"></i>Ar + combustível</span>
+          <span><i style="background:var(--gas-comp)"></i>Mistura comprimida</span>
+          <span><i style="background:var(--gas-burn)"></i>Combustão</span>
+          <span><i style="background:var(--gas-exh)"></i>Gases de escape</span>
+          <span><i style="background:var(--oil)"></i>Óleo</span>
+        </div>
+      </div>
+      <div class="lab-bottom">
+        <div class="grp">
+          <button class="btn sm" id="bPrev" title="Tempo anterior">◀ Tempo</button>
+          <button class="btn sm primary" id="bPlay">Pausar</button>
+          <button class="btn sm" id="bNext" title="Próximo tempo">Tempo ▶</button>
+        </div>
+        <span class="sep"></span>
+        <div class="seg" id="speedSeg" aria-label="Velocidade">
+          <button data-s="0.1">0,1×</button><button data-s="0.25">0,25×</button><button data-s="0.5">0,5×</button><button data-s="1" class="on">1×</button><button data-s="2">2×</button>
+        </div>
+        <span class="sep"></span>
+        <label for="explode">Vista explodida <input type="range" id="explode" min="0" max="1" step="0.01" value="0"></label>
+        <div class="seg" id="cylSeg" aria-label="Número de cilindros"><button data-n="1">1 cil.</button><button data-n="4" class="on">4 cil.</button></div>
+        <div class="angle">Virabrequim <b id="angCrank">0°</b> · Ciclo <b id="angCycle">0°</b>/720°</div>
+      </div>
+    </div>
+    <aside class="lab-panel">
+      <div class="tabs">
+        <button data-t="peca" class="on">Peça</button>
+        <button data-t="visao">Visualização</button>
+        <button data-t="guia">Aula guiada</button>
+      </div>
+      <div id="tab-peca"></div>
+      <div id="tab-visao" hidden>
+        <h4 style="margin-bottom:8px">Mostrar componentes</h4>
+        <div class="toggles" id="toggles"></div>
+        <h4 style="margin:18px 0 8px">Selecionar peça</h4>
+        <div class="partlist" id="partList"></div>
+        <p class="muted" style="font-size:13px;margin-top:14px">Arraste para girar, use a roda do mouse ou pinça para zoom, e botão direito ou dois dedos para mover a câmera.</p>
+      </div>
+      <div id="tab-guia" hidden></div>
+    </aside>
+  </div>
+</section>
+
+<!-- SIMULADOR -->
+<section class="view" id="v-simulador">
+  <div class="wrap" style="padding-block:36px 70px">
+    <div class="sec-head"><div><div class="eyebrow">Simulador de diagnóstico</div><h2 style="margin-top:8px">Caso 01 · Motor trepidando na marcha lenta</h2>
+    <p>Investigue como na oficina: confirme a queixa, colete dados, escolha testes e só então aponte a causa e o reparo.</p></div>
+    <button class="btn sm" id="simReset">Reiniciar caso</button></div>
+    <div class="simbanner"><span class="chip warn">Simulado</span>Veículo, leituras e resultados são fictícios e servem para treinar raciocínio. Não use estes números para diagnosticar um carro real.</div>
+    <div class="sim">
+      <div class="vcard">
+        <div class="eyebrow" style="font-size:11px">Ordem de serviço #0147</div>
+        <h3 style="margin-top:6px">Hatch 1.6 flex · 4 cil.</h3>
+        <dl class="kv">
+          <dt>Modelo</dt><dd>Fictício (didático)</dd>
+          <dt>Quilometragem</dt><dd>98.400 km</dd>
+          <dt>Injeção</dt><dd>Multiponto, sequencial</dd>
+          <dt>Ignição</dt><dd>Bobina individual por cilindro</dd>
+          <dt>Ordem de ignição</dt><dd>1-3-4-2</dd>
+        </dl>
+        <div class="score">
+          <div class="eyebrow" style="font-size:11px;color:var(--muted)">Pontuação</div>
+          <div class="big"><span id="simScore">0</span><small>/100</small></div>
+          <div class="scorelog" id="simLog"></div>
+        </div>
+      </div>
+      <div style="min-width:0">
+        <div class="stepper" id="simSteps"></div>
+        <div class="simpane" id="simPane"></div>
+      </div>
+    </div>
+    <div style="margin-top:28px">
+      <h3>Próximos casos</h3>
+      <div class="levels" style="margin-top:12px">
+        <div class="lvl"><span class="chip">Em produção</span><h4>Motor não dá partida</h4><p>Partida, bateria, imobilizador e alimentação.</p></div>
+        <div class="lvl"><span class="chip">Em produção</span><h4>Superaquecimento em trânsito</h4><p>Eletroventilador, válvula termostática e nível de líquido.</p></div>
+        <div class="lvl"><span class="chip">Em produção</span><h4>Alternador não carrega</h4><p>Tensão de carga, correia, regulador e aterramento.</p></div>
+        <div class="lvl"><span class="chip">Em produção</span><h4>Vibração ao frear</h4><p>Discos, pastilhas, cubo e pneus.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FERRAMENTAS -->
+<section class="view" id="v-ferramentas">
+  <div class="wrap" style="padding-block:36px 70px">
+    <div class="sec-head"><div><div class="eyebrow">Ferramentas</div><h2 style="margin-top:8px">Calculadoras e referências</h2>
+    <p>Fórmulas exibidas, unidades explícitas e um exemplo pré-carregado em cada ferramenta.</p></div></div>
+    <div class="tools">
+      <div class="tool" id="t-cil"></div>
+      <div class="tool" id="t-pot"></div>
+      <div class="tool" id="t-rel"></div>
+      <div class="tool" id="t-conv"></div>
+    </div>
+    <div class="tool" style="margin-top:16px" id="t-obd"></div>
+    <div class="tool" style="margin-top:16px" id="t-ferr"></div>
+  </div>
+</section>
+
+<!-- GLOSSÁRIO -->
+<section class="view" id="v-glossario">
+  <div class="wrap" style="padding-block:36px 70px">
+    <div class="sec-head"><div><div class="eyebrow">Glossário</div><h2 style="margin-top:8px">Termos automotivos</h2>
+    <p>Definições curtas, com o termo técnico e a ideia por trás dele.</p></div></div>
+    <div class="gloss-tools"><input id="gq" type="search" placeholder="Filtrar termos…" aria-label="Filtrar glossário"><div class="seg" id="gcat"></div></div>
+    <div class="gloss" id="glossBox"></div>
+  </div>
+</section>
+
+<!-- PROGRESSO -->
+<section class="view" id="v-progresso">
+  <div class="wrap" style="padding-block:36px 70px">
+    <div class="sec-head"><div><div class="eyebrow">Meu aprendizado</div><h2 style="margin-top:8px">Seu progresso</h2>
+    <p>Salvo somente neste navegador, sem conta de usuário. Se você limpar os dados do site ou trocar de aparelho, o progresso não acompanha. Certificados exigem conta e por isso ainda não estão disponíveis.</p></div>
+    <div id="resetBox"></div></div>
+    <div class="prog-grid">
+      <div class="pbox"><h3>Por nível</h3><div id="pLevels" style="margin-top:8px"></div></div>
+      <div style="display:grid;gap:16px;align-content:start">
+        <div class="pbox"><h3>Recomendação</h3><div id="pRec" style="margin-top:10px"></div></div>
+        <div class="pbox"><h3>Favoritas</h3><div id="pFav" style="margin-top:10px"></div></div>
+        <div class="pbox"><h3>Histórico</h3><div class="hist" id="pHist" style="margin-top:10px"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b style="font-family:var(--f-display);font-size:17px;color:var(--fg)">Oficina Escola 3D</b><p style="margin-top:6px;max-width:60ch">Conteúdo educacional. Procedimentos reais devem seguir o manual do fabricante do veículo e ser feitos com equipamento de proteção e ferramentas adequadas.</p></div>
+    <div><p>Modelos 3D são representações geométricas simplificadas, com cinemática real de biela-manivela e sincronismo de válvulas simplificado.</p></div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const fmt=(n,d=1)=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const reduceMotion=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= PROGRESSO (localStorage) ================= */
+const PKEY='oficina3d.progress.v1';
+let P={lessons:{},quiz:{},fav:{},sim:{best:0},hist:[]};
+try{const s=localStorage.getItem(PKEY);if(s)P=Object.assign(P,JSON.parse(s));}catch(e){}
+function saveP(){try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){}}
+function logH(txt){P.hist.unshift({t:Date.now(),txt});P.hist=P.hist.slice(0,40);saveP();}
+
+/* ================= PEÇAS DO MOTOR ================= */
+const PARTS={
+ pistao:{nome:'Pistão',funcao:'Recebe a pressão da combustão e a transforma em força que empurra a biela.',local:'Dentro de cada cilindro do bloco, entre o cabeçote (acima) e a biela (abaixo).',como:'É um êmbolo de liga de alumínio que sobe e desce dentro do cilindro. Os anéis em seu topo vedam a câmara de combustão e raspam o excesso de óleo da parede. O ponto mais alto do curso é o PMS (ponto morto superior) e o mais baixo, o PMI (ponto morto inferior).',con:['Anéis de segmento','Pino do pistão','Biela','Parede do cilindro'],sint:['Consumo de óleo e fumaça azulada (anéis gastos)','Batida metálica com motor frio (folga pistão/cilindro)','Baixa compressão em um cilindro'],diag:['Teste de compressão','Teste de estanqueidade (leak-down)','Inspeção com boroscópio pela vela'],manut:'Não tem manutenção periódica. A vida do pistão depende de óleo correto, troca no prazo e de evitar detonação e superaquecimento.',curio:'A 6.000 rpm o pistão para e inverte o sentido 200 vezes por segundo.',aula:'aula-n2-quatro-tempos'},
+ biela:{nome:'Biela',funcao:'Liga o pistão ao virabrequim e converte o movimento de vaivém em rotação.',local:'Entre o pino do pistão (olhal menor) e o moente do virabrequim (olhal maior).',como:'Funciona como o pedal de uma bicicleta: o pistão empurra, a biela inclina e o virabrequim gira. O olhal maior é bipartido e gira sobre bronzinas lubrificadas sob pressão.',con:['Pistão (pino)','Virabrequim (moente)','Bronzinas de biela'],sint:['Batida grave que aumenta com a carga (bronzina de biela)','Queda de pressão de óleo'],diag:['Escuta com estetoscópio','Medição da folga de bronzina com plastigage ou micrômetro (na retífica)'],manut:'Depende da lubrificação. Óleo vencido ou nível baixo é a principal causa de desgaste de bronzina.',curio:'A relação entre o comprimento da biela e o raio da manivela muda o quanto o pistão “demora” perto do PMS.',aula:'aula-n2-quatro-tempos'},
+ virabrequim:{nome:'Virabrequim',funcao:'Eixo de manivelas que recebe os empurrões de todas as bielas e entrega torque giratório ao volante e ao câmbio.',local:'Na parte inferior do bloco, apoiado nos mancais principais.',como:'Cada cilindro tem um moente deslocado do eixo central. No 4 cilindros em linha, os moentes 1 e 4 ficam alinhados e os 2 e 3 ficam a 180°, o que permite uma combustão a cada meia volta.',con:['Bielas','Mancais e bronzinas','Volante do motor','Engrenagem/polia de sincronismo'],sint:['Ruído surdo ao acelerar (mancal)','Vibração por quebra ou empeno','Vazamento pelos retentores dianteiro e traseiro'],diag:['Pressão de óleo com manômetro','Medição de colos com micrômetro (retífica)','Verificação de empeno com relógio comparador'],manut:'Retentores podem vazar com o tempo. A troca de óleo no prazo protege mancais e colos.',curio:'Contrapesos opostos aos moentes reduzem as vibrações da massa girante.',aula:'aula-n2-quatro-tempos'},
+ bloco:{nome:'Bloco do motor',funcao:'Estrutura principal que abriga os cilindros e sustenta o virabrequim.',local:'Centro do motor, entre o cabeçote e o cárter.',como:'Peça fundida em ferro ou alumínio com galerias internas para óleo e líquido de arrefecimento. No laboratório ele aparece transparente para mostrar o interior.',con:['Cabeçote (via junta)','Cárter','Virabrequim','Bomba d’água'],sint:['Vazamento externo de líquido ou óleo','Mistura de óleo com líquido (trinca ou junta)','Superaquecimento'],diag:['Teste de pressão do sistema de arrefecimento','Teste de CO₂ no reservatório (vazamento de combustão)','Inspeção visual'],manut:'Usar o aditivo de arrefecimento correto evita corrosão interna das galerias.',curio:'Blocos de alumínio costumam ter camisas de ferro ou revestimento especial nas paredes dos cilindros.',aula:'aula-n1-sistemas'},
+ cabecote:{nome:'Cabeçote',funcao:'Fecha os cilindros por cima, forma a câmara de combustão e abriga válvulas, velas e, em muitos motores, o comando.',local:'Parte superior do motor, sobre o bloco.',como:'Possui dutos de admissão e escape que levam a mistura até as válvulas e retiram os gases queimados. A junta de cabeçote veda a união com o bloco.',con:['Bloco','Válvulas','Comando de válvulas','Coletores','Velas'],sint:['Fumaça branca constante e perda de líquido (junta queimada)','Superaquecimento','Baixa compressão em dois cilindros vizinhos'],diag:['Teste de compressão','Teste de CO₂ no líquido','Medição de planicidade com régua e calibre de lâminas (retífica)'],manut:'Evitar superaquecimento é a principal forma de proteger o cabeçote contra empeno.',curio:'Planar um cabeçote empenado retira material e reduz o volume da câmara, aumentando a taxa de compressão.',aula:'aula-n2-cilindrada'},
+ comando:{nome:'Comando de válvulas',funcao:'Abre e fecha as válvulas no momento certo, sincronizado com o virabrequim.',local:'No cabeçote (DOHC/SOHC) ou no bloco em motores antigos. Aqui, dois eixos: admissão e escape.',como:'É um eixo com cames (ressaltos). Cada came empurra uma válvula quando passa por ela. Gira na metade da rotação do virabrequim, porque cada válvula abre uma vez a cada duas voltas do motor.',con:['Correia ou corrente de sincronismo','Tuchos/balancins','Válvulas'],sint:['Ruído de batida no cabeçote (tucho)','Motor não pega ou funciona muito mal após a correia pular dentes'],diag:['Conferir marcas de sincronismo','Teste de compressão','Correlação comando × virabrequim no scanner (quando disponível)'],manut:'A correia dentada tem prazo de troca definido pelo fabricante. Se ela romper em motores de interferência, válvulas podem bater nos pistões.',curio:'A relação de 2:1 entre virabrequim e comando é a mesma em qualquer motor quatro tempos.',aula:'aula-n2-quatro-tempos'},
+ valvula_adm:{nome:'Válvula de admissão',funcao:'Abre para deixar entrar a mistura (ou só ar, na injeção direta) e fecha para vedar a câmara.',local:'No cabeçote, do lado do coletor de admissão.',como:'Uma mola mantém a válvula fechada contra a sede. O came empurra a haste e afasta a cabeça da sede. Costuma ser maior que a de escape, porque encher o cilindro é mais difícil que esvaziá-lo.',con:['Comando (came)','Mola e retentor','Sede e guia no cabeçote'],sint:['Falha de combustão em um cilindro','Perda de potência','Carbonização (comum em injeção direta)'],diag:['Teste de compressão','Teste de estanqueidade: ar saindo pela admissão indica válvula de admissão'],manut:'Folga de válvulas deve ser regulada em motores com tuchos mecânicos, conforme o fabricante.',curio:'No laboratório o tempo de abertura é simplificado. Nos motores reais a válvula abre antes do PMS e fecha depois do PMI.',aula:'aula-n2-quatro-tempos'},
+ valvula_esc:{nome:'Válvula de escape',funcao:'Abre no final da expansão para liberar os gases queimados para o coletor de escape.',local:'No cabeçote, do lado do coletor de escape.',como:'Mesmo mecanismo da admissão, mas trabalha muito mais quente, pois é atravessada pelos gases da combustão.',con:['Comando (came)','Mola','Sede','Coletor de escape'],sint:['Estalo no escape','Baixa compressão','Válvula queimada por mistura pobre ou folga zerada'],diag:['Teste de estanqueidade: ar saindo pelo escapamento','Teste de compressão'],manut:'Folga de válvula correta evita que ela deixe de assentar e queime.',curio:'Algumas válvulas de escape têm haste oca com sódio para transferir calor da cabeça para a guia.',aula:'aula-n2-quatro-tempos'},
+ vela:{nome:'Vela de ignição',funcao:'Gera a faísca que inicia a combustão da mistura comprimida.',local:'Rosqueada no cabeçote, com o eletrodo dentro da câmara.',como:'A bobina eleva a tensão da bateria a milhares de volts. A faísca salta entre os eletrodos pouco antes do PMS, no tempo de compressão (avanço de ignição).',con:['Bobina de ignição','Cabeçote','Módulo de injeção (comanda o momento da faísca)'],sint:['Falha de combustão','Dificuldade de partida','Aumento de consumo'],diag:['Inspeção da vela (cor, folga, desgaste)','Troca cruzada de bobina/vela entre cilindros','Leitura do contador de falhas no scanner'],manut:'Troca por quilometragem conforme o plano do fabricante. Torque de aperto e folga variam por modelo.',curio:'A cor do isolador ajuda a ler como a combustão está acontecendo naquele cilindro.',aula:'aula-n7-falha'},
+ carter:{nome:'Cárter e óleo',funcao:'Reservatório do óleo lubrificante, que é sugado pela bomba e enviado aos mancais, pistões e comando.',local:'Parte inferior do motor, abaixo do virabrequim.',como:'A bomba de óleo puxa o óleo do cárter por um pescador com tela, passa pelo filtro e pressuriza as galerias. Depois o óleo escorre de volta por gravidade.',con:['Bomba de óleo','Filtro de óleo','Bloco','Bujão de drenagem'],sint:['Luz de pressão de óleo acesa','Manchas sob o carro','Nível baixo na vareta'],diag:['Conferir nível com motor desligado e em piso plano','Medir pressão com manômetro mecânico'],manut:'Trocar óleo e filtro conforme o plano do fabricante, com a especificação indicada no manual.',curio:'O óleo também resfria: ele retira calor dos pistões e mancais.',aula:'aula-n1-sistemas'},
+ camara:{nome:'Câmara de combustão (gases)',funcao:'Espaço onde a mistura é comprimida e queimada. As cores mostram o que há dentro do cilindro em cada tempo.',local:'Entre o topo do pistão e o cabeçote.',como:'Azul: mistura entrando. Violeta: mistura comprimida. Laranja: combustão empurrando o pistão. Cinza: gases saindo pelo escape.',con:['Pistão','Válvulas','Vela','Cabeçote'],sint:['Detonação (batida de pino)','Carbonização','Falha de combustão'],diag:['Teste de compressão','Análise de gases de escape','Sensor de detonação no scanner'],manut:'Combustível adequado e sistema de ignição em ordem evitam detonação.',curio:'O volume que sobra com o pistão no PMS define a taxa de compressão.',aula:'aula-n2-cilindrada'},
+ coletor_adm:{nome:'Coletor de admissão',funcao:'Distribui o ar (e, na injeção indireta, a mistura) para cada cilindro.',local:'Lateral do cabeçote, ligado ao corpo de borboleta.',como:'Cada duto (runner) leva ao duto de um cilindro. No laboratório o duto acende em azul quando aquela válvula de admissão está aberta.',con:['Corpo de borboleta','Sensor MAP','Bicos injetores (indireta)','Cabeçote'],sint:['Marcha lenta irregular por entrada falsa de ar','Mistura pobre (P0171)'],diag:['Teste de fumaça para localizar vazamentos','Leitura de correção de combustível'],manut:'Verificar mangueiras de vácuo e juntas em revisões.',curio:'O comprimento dos dutos é escolhido para aproveitar ondas de pressão e melhorar o enchimento em certas rotações.',aula:'aula-n2-quatro-tempos'},
+ coletor_esc:{nome:'Coletor de escape',funcao:'Recolhe os gases quentes de cada cilindro e os leva ao catalisador e ao escapamento.',local:'Lateral do cabeçote, do lado oposto à admissão (cabeçote de fluxo cruzado).',como:'Feito em ferro fundido ou aço inox. Acende em laranja no laboratório quando a válvula de escape do cilindro está aberta.',con:['Cabeçote','Sonda lambda','Catalisador'],sint:['Ruído de vazamento com motor frio','Leitura falsa da sonda lambda por entrada de ar'],diag:['Inspeção visual de trincas','Escuta com motor frio'],manut:'Peça muito quente: não trabalhe perto dele com o motor recém-desligado.',curio:'Pode passar de 800 °C em carga alta.',aula:'aula-n2-quatro-tempos'}
+};
+const STROKES=[
+ {k:'adm',nome:'Admissão',desc:'Pistão desce do PMS ao PMI. Válvula de admissão aberta: entra a mistura ar + combustível.',cor:'var(--gas-mix)'},
+ {k:'comp',nome:'Compressão',desc:'Válvulas fechadas. O pistão sobe e comprime a mistura no pequeno volume da câmara.',cor:'var(--gas-comp)'},
+ {k:'exp',nome:'Combustão',desc:'A vela solta a faísca perto do PMS. A pressão dos gases empurra o pistão para baixo: o único tempo que produz trabalho.',cor:'var(--gas-burn)'},
+ {k:'esc',nome:'Escape',desc:'Válvula de escape aberta. O pistão sobe e expulsa os gases queimados.',cor:'var(--gas-exh)'}
+];
+
+/* ================= MOTOR 3D ================= */
+function webglOK(){try{const c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl')||c.getContext('experimental-webgl')));}catch(e){return false;}}
+
+function createEngineViewer(el,opt){
+  opt=Object.assign({N:4,interactive:false,autoRotate:false,zoom:true},opt||{});
+  if(typeof THREE==='undefined'||!webglOK()){el.innerHTML='<div class="webgl-fail">Seu navegador não conseguiu iniciar gráficos 3D (WebGL). Os conteúdos das aulas e as descrições das peças continuam disponíveis.</div>';return null;}
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  el.appendChild(renderer.domElement);
+  renderer.domElement.style.display='block';
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(38,1,0.1,100);
+  camera.position.set(6.2,4.2,7.2);
+  const controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls.target.set(0,1.2,0);controls.enableDamping=true;controls.dampingFactor=0.08;
+  controls.enableZoom=opt.zoom;controls.minDistance=3;controls.maxDistance=18;
+  controls.autoRotate=opt.autoRotate&&!reduceMotion;controls.autoRotateSpeed=0.8;
+  if(!opt.interactive){controls.enablePan=false;}
+  scene.add(new THREE.HemisphereLight(0xcfe3ff,0x1a1208,0.75));
+  const d1=new THREE.DirectionalLight(0xffffff,0.9);d1.position.set(5,8,6);scene.add(d1);
+  const d2=new THREE.DirectionalLight(0x5aa0ff,0.45);d2.position.set(-6,3,-5);scene.add(d2);
+  const grid=new THREE.GridHelper(14,28,0x26313d,0x1a222b);grid.position.y=-1.15;scene.add(grid);
+
+  let eng=null, state={A:0,speed:1,paused:reduceMotion,selected:null,explode:0,vis:{bloco:true,cabecote:true,comando:true,carter:true,camara:true,coletores:true}};
+  const listeners={pick:[],tick:[]};
+
+  function build(N){
+    if(eng){scene.remove(eng.root);eng.root.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+    const root=new THREE.Group(), top=new THREE.Group(), cams=new THREE.Group(), pan=new THREE.Group();
+    root.add(top);top.add(cams);root.add(pan);
+    const parts={}, mats={};
+    const M=(key,p)=>{const m=new THREE.MeshStandardMaterial(Object.assign({metalness:.6,roughness:.4},p));(mats[key]||(mats[key]=[])).push(m);return m;};
+    const reg=(key,mesh,parent)=>{mesh.userData.part=key;(parts[key]||(parts[key]=[])).push(mesh);(parent||root).add(mesh);return mesh;};
+    const S=1.15, len=N*S+0.35, r=0.45, l=1.5, HB=2.33;
+    const xs=[...Array(N)].map((_,i)=>(i-(N-1)/2)*S);
+    const phi=N===4?[0,540,180,360]:[0];
+    // bloco
+    reg('bloco',new THREE.Mesh(new THREE.BoxGeometry(len,1.78,1.3),M('bloco',{color:0x5c6b7a,transparent:true,opacity:.13,depthWrite:false,metalness:.2})));
+    parts.bloco[0].position.y=HB-0.89;
+    const linerG=new THREE.CylinderGeometry(0.445,0.445,1.5,40,1,true);
+    xs.forEach(x=>{const m=reg('bloco',new THREE.Mesh(linerG,M('bloco',{color:0x8fa3b8,transparent:true,opacity:.22,side:THREE.DoubleSide,depthWrite:false})));m.position.set(x,HB-0.75,0);});
+    // cabeçote
+    const head=reg('cabecote',new THREE.Mesh(new THREE.BoxGeometry(len,0.55,1.4),M('cabecote',{color:0x7a8896,transparent:true,opacity:.24,depthWrite:false,metalness:.3})),top);
+    head.position.y=HB+0.275;
+    // cárter
+    const panM=reg('carter',new THREE.Mesh(new THREE.BoxGeometry(len,0.5,1.2),M('carter',{color:0x6b5a3a,transparent:true,opacity:.22,depthWrite:false})),pan);
+    panM.position.y=-0.6;
+    const oil=reg('carter',new THREE.Mesh(new THREE.BoxGeometry(len-0.06,0.18,1.14),M('carter',{color:0xe0a43a,transparent:true,opacity:.75,emissive:0x3a2200,metalness:.1,roughness:.2})),pan);
+    oil.position.y=-0.75;
+    // virabrequim eixo
+    const shaftM=M('virabrequim',{color:0xb8c4cf,metalness:.9,roughness:.25});
+    const shaft=reg('virabrequim',new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,len+0.4,24),shaftM));shaft.rotation.z=Math.PI/2;
+    const pulley=reg('virabrequim',new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.12,40),shaftM));pulley.rotation.z=Math.PI/2;pulley.position.x=-(len/2+0.25);
+    const fly=reg('virabrequim',new THREE.Mesh(new THREE.CylinderGeometry(0.85,0.85,0.1,48),M('virabrequim',{color:0x8796a5,metalness:.9,roughness:.3})));fly.rotation.z=Math.PI/2;fly.position.x=len/2+0.25;
+    // eixos comando
+    const camShM=M('comando',{color:0xc0ccd8,metalness:.9,roughness:.25});
+    [-0.22,0.22].forEach(z=>{const s=reg('comando',new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,len+0.2,16),camShM),cams);s.rotation.z=Math.PI/2;s.position.set(0,3.1,z);});
+    const camGear=reg('comando',new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,0.08,40),M('comando',{color:0xff7a1a,metalness:.4,roughness:.5})),cams);camGear.rotation.z=Math.PI/2;camGear.position.set(-(len/2+0.15),3.1,0);
+    // correia (visual)
+    const beltM=M('comando',{color:0x202830,metalness:.1,roughness:.9});
+    const belt=reg('comando',new THREE.Mesh(new THREE.BoxGeometry(0.06,3.1,0.08),beltM),root);belt.position.set(-(len/2+0.2),1.55,0.45);
+    const belt2=reg('comando',new THREE.Mesh(new THREE.BoxGeometry(0.06,3.1,0.08),beltM),root);belt2.position.set(-(len/2+0.2),1.55,-0.45);
+    const cyl=[];
+    const pistG=new THREE.CylinderGeometry(0.42,0.42,0.42,40), ringG=new THREE.CylinderGeometry(0.425,0.425,0.025,40);
+    const rodG=new THREE.BoxGeometry(0.11,l,0.07), pinG=new THREE.CylinderGeometry(0.11,0.11,0.3,20);
+    const webG=new THREE.BoxGeometry(0.07,r+0.36,0.46), cwG=new THREE.BoxGeometry(0.07,0.32,0.62);
+    const gasG=new THREE.CylinderGeometry(0.415,0.415,1,32);
+    const lobeDisc=new THREE.CylinderGeometry(0.11,0.11,0.12,20), lobeNose=new THREE.BoxGeometry(0.12,0.16,0.12);
+    const stemG=new THREE.CylinderGeometry(0.025,0.025,0.62,10), vHeadG=new THREE.CylinderGeometry(0.15,0.12,0.04,24);
+    const runnerG=new THREE.CylinderGeometry(0.12,0.12,0.7,16);
+    xs.forEach((x,i)=>{
+      const c={x,phi:phi[i]};
+      const pg=new THREE.Group();pg.position.x=x;
+      const pm=M('pistao',{color:0xc9d3dc,metalness:.75,roughness:.3});
+      const body=new THREE.Mesh(pistG,pm);body.position.y=0.12;body.userData.part='pistao';pg.add(body);(parts.pistao||(parts.pistao=[])).push(body);
+      [0.25,0.18].forEach(y=>{const rg=new THREE.Mesh(ringG,M('pistao',{color:0x3a4550,metalness:.8,roughness:.4}));rg.position.y=y;rg.userData.part='pistao';pg.add(rg);parts.pistao.push(rg);});
+      root.add(pg);c.piston=pg;
+      const rod=reg('biela',new THREE.Mesh(rodG,M('biela',{color:0x7f8e9c,metalness:.85,roughness:.35})));rod.position.x=x;c.rod=rod;
+      const th=new THREE.Group();th.position.x=x;
+      const pin=new THREE.Mesh(pinG,shaftM);pin.rotation.z=Math.PI/2;pin.position.y=r;pin.userData.part='virabrequim';th.add(pin);parts.virabrequim.push(pin);
+      [-0.17,0.17].forEach(dx=>{const w=new THREE.Mesh(webG,shaftM);w.position.set(dx,(r+0.36)/2-0.18,0);w.userData.part='virabrequim';th.add(w);parts.virabrequim.push(w);
+        const cw=new THREE.Mesh(cwG,shaftM);cw.position.set(dx,-0.3,0);cw.userData.part='virabrequim';th.add(cw);parts.virabrequim.push(cw);});
+      root.add(th);c.throw=th;
+      const gm=new THREE.MeshStandardMaterial({color:0x4fb3ff,transparent:true,opacity:.55,emissive:0x0,metalness:0,roughness:.8,depthWrite:false});
+      const gas=reg('camara',new THREE.Mesh(gasG,gm));gas.position.x=x;c.gas=gas;c.gasM=gm;
+      // válvulas
+      c.valves={};
+      [['adm',-0.2,'valvula_adm',0x9fd0ff],['esc',0.2,'valvula_esc',0xffb27a]].forEach(([k,z,key,col])=>{
+        const vg=new THREE.Group();vg.position.set(x,HB+0.02,z);
+        const vm=M(key,{color:col,metalness:.7,roughness:.35});
+        const st=new THREE.Mesh(stemG,vm);st.position.y=0.31;st.userData.part=key;vg.add(st);
+        const hd=new THREE.Mesh(vHeadG,vm);hd.userData.part=key;vg.add(hd);
+        (parts[key]||(parts[key]=[])).push(st,hd);top.add(vg);c.valves[k]=vg;
+        const lg=new THREE.Group();lg.position.set(x,3.1,z*1.1);
+        const lm=camShM;
+        const dsk=new THREE.Mesh(lobeDisc,lm);dsk.rotation.z=Math.PI/2;dsk.userData.part='comando';lg.add(dsk);
+        const ns=new THREE.Mesh(lobeNose,lm);ns.position.y=0.1;ns.userData.part='comando';lg.add(ns);
+        parts.comando.push(dsk,ns);cams.add(lg);c['lobe_'+k]=lg;
+        // dutos
+        const rm=new THREE.MeshStandardMaterial({color:k==='adm'?0x2a4a6e:0x5a3a24,metalness:.5,roughness:.5,emissive:0x0});
+        const rn=new THREE.Mesh(runnerG,rm);rn.rotation.x=Math.PI/2;rn.position.set(x,HB+0.28,z>0?1.02:-1.02);rn.userData.part=k==='adm'?'coletor_adm':'coletor_esc';
+        (parts[rn.userData.part]||(parts[rn.userData.part]=[])).push(rn);top.add(rn);c['run_'+k]=rm;
+      });
+      // vela
+      const sp=reg('vela',new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.4,12),M('vela',{color:0xf2f2f2,metalness:.2,roughness:.4})),top);sp.position.set(x,HB+0.22,0);
+      const spTop=reg('vela',new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.075,0.12,12),M('vela',{color:0x222a33})),top);spTop.position.set(x,HB+0.46,0);
+      const fl=new THREE.PointLight(0xff8a2a,0,2.2);fl.position.set(x,HB-0.08,0);top.add(fl);c.flash=fl;
+      cyl.push(c);
+    });
+    // plenum
+    const plen=reg('coletor_adm',new THREE.Mesh(new THREE.BoxGeometry(len,0.32,0.32),new THREE.MeshStandardMaterial({color:0x2a4a6e,metalness:.5,roughness:.5})),top);plen.position.set(0,HB+0.28,-1.45);
+    const exh=reg('coletor_esc',new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,len,20),new THREE.MeshStandardMaterial({color:0x5a3a24,metalness:.5,roughness:.5})),top);exh.rotation.z=Math.PI/2;exh.position.set(0,HB+0.28,1.42);
+    scene.add(root);
+    eng={root,top,cams,pan,parts,mats,cyl,N,r,l,HB};
+    applyVis();update();
+  }
+  const VISMAP={bloco:['bloco'],cabecote:['cabecote','vela','valvula_adm','valvula_esc'],comando:['comando'],carter:['carter'],camara:['camara'],coletores:['coletor_adm','coletor_esc']};
+  function applyVis(){
+    if(!eng)return;
+    Object.keys(VISMAP).forEach(g=>VISMAP[g].forEach(k=>(eng.parts[k]||[]).forEach(m=>{m.visible=state.vis[g];})));
+    if(state.explode>0.05)(eng.parts.camara||[]).forEach(m=>m.visible=false);
+  }
+  const mod=(a,m)=>((a%m)+m)%m, D=Math.PI/180;
+  const gasCol={mix:new THREE.Color(0x4fb3ff),comp:new THREE.Color(0x8b7bff),burn:new THREE.Color(0xff7a1a),exh:new THREE.Color(0x8d939c)};
+  const tmpC=new THREE.Color();
+  function update(){
+    if(!eng)return;
+    const {cyl,r,l,HB}=eng, A=state.A, e=state.explode;
+    eng.top.position.y=e*1.3; eng.cams.position.y=e*0.6; eng.pan.position.y=-e*0.9;
+    cyl.forEach(c=>{
+      const a=mod(A-c.phi,720), ca=mod(a,360)*D;
+      const py=r*Math.cos(ca)+Math.sqrt(l*l-r*r*Math.sin(ca)*Math.sin(ca));
+      c.piston.position.y=py;
+      const cy=r*Math.cos(ca), cz=r*Math.sin(ca);
+      c.rod.position.set(c.x,(py+cy)/2,cz/2);
+      c.rod.rotation.x=Math.atan2(-cz,py-cy);
+      c.throw.rotation.x=ca;
+      const li=a<=180?Math.sin(a/180*Math.PI)*0.13:0;
+      const le=a>=540?Math.sin((a-540)/180*Math.PI)*0.13:0;
+      c.valves.adm.position.y=HB+0.02-li; c.valves.esc.position.y=HB+0.02-le;
+      c.lobe_adm.rotation.x=(A/2-(c.phi+90)/2+180)*D;
+      c.lobe_esc.rotation.x=(A/2-(c.phi+630)/2+180)*D;
+      const top=py+0.33, h=Math.max(0.02,HB-top);
+      c.gas.scale.y=h; c.gas.position.y=top+h/2;
+      let em=0;
+      if(a<180){tmpC.copy(gasCol.mix);}
+      else if(a<360){tmpC.copy(gasCol.mix).lerp(gasCol.comp,(a-180)/180);}
+      else if(a<540){const t=(a-360)/180;tmpC.copy(gasCol.burn).lerp(gasCol.exh,Math.pow(t,1.3));em=Math.max(0,1-t*1.6);}
+      else{tmpC.copy(gasCol.exh);}
+      c.gasM.color.copy(tmpC); c.gasM.emissive.copy(tmpC).multiplyScalar(em*0.8);
+      const fz=(a>=352&&a<=380)?Math.sin((a-352)/28*Math.PI):0;
+      c.flash.intensity=fz*3.2;
+      c.run_adm.emissive.setHex(li>0.01?0x1d5fb0:0x000000).multiplyScalar(li/0.13);
+      c.run_esc.emissive.setHex(le>0.01?0xb04a10:0x000000).multiplyScalar(le/0.13);
+    });
+    // destaque
+    Object.keys(eng.mats).forEach(k=>eng.mats[k].forEach(m=>{if(m.emissive&&k!=='carter')m.emissive.setHex(k===state.selected?0x1e4f8f:0x000000);}));
+    if(state.selected==='carter')eng.mats.carter.forEach(m=>m.emissive.setHex(0x553300));
+    else if(eng.mats.carter){eng.mats.carter[0].emissive.setHex(0);eng.mats.carter[1].emissive.setHex(0x3a2200);}
+    listeners.tick.forEach(f=>f(A));
+  }
+  // picking
+  const ray=new THREE.Raycaster(), mv=new THREE.Vector2(); let down=null;
+  if(opt.interactive){
+    renderer.domElement.addEventListener('pointerdown',ev=>{down=[ev.clientX,ev.clientY];});
+    renderer.domElement.addEventListener('pointerup',ev=>{
+      if(!down||Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>6)return;
+      const b=renderer.domElement.getBoundingClientRect();
+      mv.set(((ev.clientX-b.left)/b.width)*2-1,-((ev.clientY-b.top)/b.height)*2+1);
+      ray.setFromCamera(mv,camera);
+      const objs=[];eng.root.traverse(o=>{if(o.isMesh&&o.userData.part)objs.push(o);});
+      const hits=ray.intersectObjects(objs,false).filter(h=>{let o=h.object;while(o){if(!o.visible)return false;o=o.parent;}return true;});
+      // prioriza peças opacas atrás de cascas transparentes
+      const shells=['bloco','cabecote','carter'];
+      const hit=hits.find(h=>!shells.includes(h.object.userData.part))||hits[0];
+      if(hit){api.select(hit.object.userData.part);listeners.pick.forEach(f=>f(hit.object.userData.part));}
+    });
+  }
+  function resize(){const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);renderer.domElement.style.width=w+'px';renderer.domElement.style.height=h+'px';camera.aspect=w/h;camera.updateProjectionMatrix();}
+  const ro=new ResizeObserver(resize);ro.observe(el);
+  let active=true,last=performance.now();
+  function loop(t){
+    requestAnimationFrame(loop);
+    const dt=Math.min(0.05,(t-last)/1000);last=t;
+    if(!active)return;
+    if(!state.paused){state.A=mod(state.A+dt*240*state.speed,720);}
+    update();controls.update();renderer.render(scene,camera);
+  }
+  build(opt.N);resize();requestAnimationFrame(loop);
+  const api={
+    setActive(b){active=b;if(b){last=performance.now();resize();}},
+    setPaused(b){state.paused=b;},isPaused(){return state.paused;},
+    setSpeed(s){state.speed=s;},
+    getA(){return state.A;},setA(a){state.A=mod(a,720);update();},
+    setVis(g,b){state.vis[g]=b;applyVis();},
+    setExplode(e){state.explode=e;applyVis();},
+    select(k){state.selected=k;update();},
+    setN(n){build(n);},
+    focus(k){const o=eng&&eng.parts[k]&&eng.parts[k][0];if(!o)return;const v=new THREE.Vector3();o.getWorldPosition(v);controls.target.lerp(v,0.6);},
+    on(ev,f){listeners[ev].push(f);},
+    get N(){return eng?eng.N:0;}
+  };
+  return api;
+}
+
+/* ================= NÍVEIS E AULAS ================= */
+const LEVELS=[
+ {n:1,t:'Fundamentos da mecânica',d:'Para quem nunca abriu um capô: sistemas, grandezas e segurança.',topics:['O que é mecânica automotiva','Como funciona um automóvel','Principais componentes','Motor × câmbio × transmissão × diferencial','Tipos de veículos e arquiteturas','Ferramentas básicas de oficina','Torque, potência e rotação','Força, atrito e temperatura','Segurança na oficina','Identificação de componentes'],lessons:['n1-sistemas','n1-torque']},
+ {n:2,t:'Motor de combustão interna',d:'Ciclo de quatro tempos, componentes internos e geometria do motor.',topics:['Ciclo de quatro tempos','Motor de dois tempos','Bloco, cabeçote, pistões, bielas e virabrequim','Comando, válvulas, tuchos e balancins','Cilindrada, taxa de compressão e ordem de ignição','Motores em linha, V e boxer','Ciclos Otto e Diesel','Lubrificação e arrefecimento','Correias, correntes e sincronismo','Turbo e intercooler','Desgaste, folgas e falhas'],lessons:['n2-quatro-tempos','n2-cilindrada']},
+ {n:3,t:'Alimentação e injeção',d:'Do tanque ao bico injetor, sensores e mistura ar-combustível.',topics:['Injeção eletrônica direta e indireta','Bicos e bomba de combustível','Corpo de borboleta','Sensores MAP e MAF','Sonda lambda','Relação estequiométrica','Diagnóstico de falhas de alimentação'],lessons:[]},
+ {n:4,t:'Elétrica e eletrônica',d:'Lei de Ohm, bateria, alternador, relés, ECUs e rede CAN.',topics:['Tensão, corrente e resistência','Lei de Ohm','Bateria, alternador e motor de partida','Fusíveis, relés e aterramentos','Multímetro automotivo','Sensores e atuadores','ECUs e rede CAN'],lessons:[]},
+ {n:5,t:'Transmissão e embreagem',d:'Embreagem, câmbios manual, automático, CVT e DCT, diferencial.',topics:['Embreagem e volante','Câmbio manual','Automático com conversor de torque','CVT e dupla embreagem','Relações de transmissão','Juntas homocinéticas','Diferencial e tipos de tração'],lessons:[]},
+ {n:6,t:'Suspensão, direção e freios',d:'Geometria, amortecimento, ABS e controle de estabilidade.',topics:['McPherson e multilink','Molas e amortecedores','Geometria e alinhamento','Direção hidráulica e elétrica','Freios a disco e tambor','ABS, ESP e controle de tração'],lessons:[]},
+ {n:7,t:'Diagnóstico e manutenção',d:'Método de diagnóstico, OBD-II, scanner e multímetro.',topics:['Manutenção preventiva e corretiva','Plano por km e tempo','Leitura de códigos OBD-II','Parâmetros em tempo real','Diagnóstico por sintomas','Confirmação do reparo'],lessons:['n7-falha']},
+ {n:8,t:'Retífica e reparação avançada',d:'Metrologia, folgas, tolerâncias e montagem técnica.',topics:['Micrômetro, súbito e relógio comparador','Ovalização e conicidade','Planicidade do cabeçote','Bronzinas e folgas','Teste de compressão e estanqueidade','Sequência e torque de aperto'],lessons:[]},
+ {n:9,t:'Turbo, performance e preparação',d:'Sobrealimentação, eficiência volumétrica e limites do motor.',topics:['Turbocompressor e boost','Intercooler','Eficiência volumétrica','Sensor de detonação','Limites térmicos e mecânicos','Rua × competição'],lessons:[]},
+ {n:10,t:'Híbridos e elétricos',d:'Motores elétricos, baterias de alta tensão e segurança.',topics:['Motores elétricos','Baterias de alta tensão','Inversores','Regeneração','Arquiteturas híbridas','Segurança em alta tensão'],lessons:[]},
+ {n:11,t:'Engenharia e diagnóstico avançado',d:'Termodinâmica, osciloscópio, redes e falhas intermitentes.',topics:['Termodinâmica de motores','Osciloscópio automotivo','Análise de sinais','Diagnóstico por evidências','Falhas intermitentes','Telemetria'],lessons:[]}
+];
+const TRAILS=[
+ {t:'Iniciante',lv:[1,2],d:'Conhecer as peças e entender como um carro funciona por dentro.'},
+ {t:'Intermediário',lv:[3,4,5,6,7],d:'Entender cada sistema, a manutenção e o diagnóstico básico.'},
+ {t:'Avançado',lv:[8,9],d:'Interpretar medições, analisar desgaste e falhas complexas.'},
+ {t:'Profissional',lv:[10,11],d:'Eletrificação, eletrônica avançada e engenharia automotiva.'}
+];
+const T=(w,def)=>`<span class="term" title="${def}">${w}</span>`;
+
+const LESSONS={
+'n1-sistemas':{lv:1,t:'Os sistemas de um automóvel',dur:'25 min',
+ obj:'Reconhecer os grandes sistemas de um carro e seguir o caminho da energia do tanque até as rodas.',
+ pre:'Nenhum. Esta é a primeira aula.',
+ intro:`<p>Um carro é uma máquina que transforma a energia guardada no combustível em movimento. Para isso, vários conjuntos trabalham juntos: um produz força (o motor), outro adapta essa força à velocidade (o câmbio), outro a leva às rodas (a transmissão), e outros controlam o carro (direção, freios e suspensão).</p><p>Pense em uma bicicleta: suas pernas produzem força, as marchas escolhem entre força e velocidade, a corrente leva o movimento à roda e o freio para tudo. O carro faz o mesmo, com mais peças e com eletrônica no meio.</p>`,
+ tec:`<h4>Os sistemas principais</h4>
+ <div class="tbl"><table><tr><th>Sistema</th><th>Função</th><th>Peças que você vai reconhecer</th></tr>
+ <tr><td>Motor</td><td>Converte calor da combustão em rotação</td><td>Bloco, cabeçote, pistões, virabrequim</td></tr>
+ <tr><td>Alimentação</td><td>Leva ar e combustível ao motor na proporção certa</td><td>Tanque, bomba, bicos injetores, filtro de ar</td></tr>
+ <tr><td>Ignição</td><td>Inicia a queima da mistura (motores Otto)</td><td>Bobinas, velas</td></tr>
+ <tr><td>Arrefecimento</td><td>Mantém o motor na temperatura de trabalho</td><td>Radiador, bomba d’água, válvula termostática</td></tr>
+ <tr><td>Lubrificação</td><td>Reduz atrito e desgaste entre peças móveis</td><td>Cárter, bomba de óleo, filtro</td></tr>
+ <tr><td>Transmissão</td><td>Leva o torque do motor às rodas</td><td>Embreagem, câmbio, diferencial, semieixos</td></tr>
+ <tr><td>Suspensão</td><td>Mantém os pneus em contato com o piso e absorve impactos</td><td>Molas, amortecedores, bandejas</td></tr>
+ <tr><td>Direção</td><td>Orienta as rodas dianteiras</td><td>Volante, coluna, caixa de direção</td></tr>
+ <tr><td>Freios</td><td>Transformam movimento em calor para reduzir a velocidade</td><td>Pedal, cilindro mestre, pinças, discos</td></tr>
+ <tr><td>Elétrico</td><td>Fornece energia e controla quase tudo</td><td>Bateria, alternador, módulos (ECU)</td></tr></table></div>
+ <h4>Motor, câmbio, transmissão e diferencial não são a mesma coisa</h4>
+ <p><b>Transmissão</b> é o conjunto completo que leva o movimento do motor às rodas. O <b>câmbio</b> (caixa de marchas) é uma parte dela: ele troca a relação entre a rotação do motor e a das rodas. O ${T('diferencial','Conjunto de engrenagens que divide o torque entre as rodas e deixa cada uma girar em velocidade diferente')} é outra parte: divide o torque entre as duas rodas e permite que, numa curva, a roda de fora gire mais rápido que a de dentro, porque ela percorre um caminho maior.</p>
+ <h4>Arquiteturas mais comuns</h4>
+ <p>A maioria dos carros compactos no Brasil tem motor dianteiro transversal (atravessado no cofre) e tração dianteira: motor, câmbio e diferencial formam um bloco único chamado transeixo. Picapes e carros esportivos costumam ter motor longitudinal e tração traseira, com um eixo cardã levando o torque até o diferencial traseiro.</p>`,
+ vis:`<p>Use o <a href="#sistemas">mapa do veículo</a> para localizar cada sistema e o <b>caminho do torque</b> logo abaixo dele para ver a ordem das peças. No <a href="#laboratorio">laboratório 3D</a> você vê por dentro o primeiro elo da cadeia: o motor.</p><div style="margin-top:12px"><a class="btn sm primary" href="#sistemas">Abrir mapa do veículo</a></div>`,
+ ex:`<p>Você arranca em primeira marcha. O motor gira a cerca de 2.000 rpm, mas as rodas giram bem mais devagar. A primeira marcha reduz a rotação e, na mesma proporção, multiplica o torque, o suficiente para tirar mais de uma tonelada da inércia. Depois, o diferencial reduz mais uma vez antes das rodas. Em quinta marcha a redução é bem menor, então as rodas giram mais rápido com o mesmo giro do motor.</p>`,
+ fal:`<div class="tbl"><table><tr><th>Sintoma</th><th>Sistema provável</th></tr>
+ <tr><td>Ponteiro de temperatura subindo, cheiro adocicado</td><td>Arrefecimento</td></tr>
+ <tr><td>Luz de óleo acesa com o motor funcionando</td><td>Lubrificação: pare o motor</td></tr>
+ <tr><td>Estalo ao virar todo o volante e acelerar</td><td>Transmissão (junta homocinética)</td></tr>
+ <tr><td>Carro “puxa” para um lado ao frear</td><td>Freios ou suspensão</td></tr>
+ <tr><td>Clique e nada acontece ao dar partida</td><td>Elétrico (bateria, cabos, motor de partida)</td></tr></table></div>`,
+ diag:`<p>O primeiro passo de qualquer diagnóstico é localizar o sistema. Para um ruído, pergunte na ordem:</p><ol><li><b>Acontece com o carro parado?</b> Se sim, vem do motor ou de algo ligado a ele (correias, alternador). Se só em movimento, olhe transmissão, rodas, suspensão e freios.</li><li><b>Muda com a rotação do motor ou com a velocidade do carro?</b> Rotação aponta para motor. Velocidade aponta para rodas, rolamentos e pneus.</li><li><b>Muda ao pisar na embreagem?</b> Se some, o ruído pode estar no câmbio.</li><li><b>Muda em curvas ou lombadas?</b> Curvas: homocinéticas e rolamentos. Lombadas: suspensão.</li></ol>`,
+ res:[['Motor','Produz rotação a partir da combustão'],['Câmbio','Escolhe entre força e velocidade'],['Diferencial','Divide o torque e permite curvas'],['Transmissão','Todo o caminho do motor até as rodas'],['Arrefecimento e lubrificação','Mantêm o motor vivo'],['Primeiro passo','Localizar o sistema antes da peça']],
+ quiz:[
+  {q:'Qual peça permite que as rodas de um mesmo eixo girem em velocidades diferentes numa curva?',o:['Câmbio','Diferencial','Embreagem','Virabrequim'],c:1,e:'O diferencial divide o torque e deixa a roda externa girar mais rápido que a interna.'},
+  {q:'“Transmissão” e “câmbio” são:',o:['Sinônimos','O câmbio é uma parte da transmissão','A transmissão é uma parte do câmbio','Sistemas sem relação'],c:1,e:'A transmissão é todo o caminho do torque; o câmbio é a caixa de marchas dentro dela.'},
+  {q:'Um ruído que aumenta com a velocidade do carro, mas não muda ao acelerar parado, aponta para:',o:['Correia do alternador','Rodas, rolamentos ou pneus','Comando de válvulas','Bomba de óleo'],c:1,e:'Se depende da velocidade e não da rotação do motor, a origem está no que gira com as rodas.'},
+  {q:'A luz de pressão de óleo acendeu com o motor em funcionamento. O certo é:',o:['Continuar até o próximo posto','Desligar o motor assim que for seguro e verificar','Acelerar para aumentar a pressão','Ignorar se o motor não fizer barulho'],c:1,e:'Sem pressão de óleo, mancais e bronzinas podem ser danificados em pouco tempo.'}],
+ des:`<p>Com o motor <b>desligado e frio</b>, freio de mão puxado, abra o capô de um carro e localize: a vareta de óleo, o reservatório do líquido de arrefecimento, o reservatório do fluido de freio e a bateria. Anote em que lado do cofre cada um fica.</p><div class="note safety"><b>Segurança</b>Nunca abra a tampa do reservatório de arrefecimento com o motor quente: o líquido está sob pressão e pode causar queimaduras. Não toque no ventilador do radiador: ele pode ligar mesmo com a chave desligada.</div>`,
+ next:'n1-torque'},
+'n1-torque':{lv:1,t:'Torque, potência e rotação',dur:'30 min',
+ obj:'Entender o que torque, potência e rotação significam, como se relacionam e como ler uma curva de motor.',
+ pre:'Aula “Os sistemas de um automóvel”.',
+ intro:`<p>Ao apertar um parafuso com uma chave, você aplica força na ponta do cabo. Quanto mais longo o cabo, mais fácil girar. Esse “esforço de girar” é o <b>torque</b>.</p><p><b>Rotação</b> é quantas voltas por minuto o eixo dá (rpm). <b>Potência</b> é quanto trabalho se faz por segundo: é o torque e a rotação juntos. Um motor pode ter muito torque e girar devagar, ou pouco torque e girar muito rápido, e entregar a mesma potência.</p>`,
+ tec:`<h4>Torque</h4><div class="formula">T = F × d<small>T em newton-metro (N·m), F em newtons (N), d = distância do eixo até onde a força é aplicada, em metros (m).</small></div><p>Exemplo: 100 N na ponta de uma chave de 0,30 m produzem 100 × 0,30 = <b>30 N·m</b>. Em manuais antigos aparece kgf·m: 1 kgf·m ≈ 9,81 N·m.</p>
+ <h4>Potência</h4><div class="formula">P [kW] = T [N·m] × n [rpm] ÷ 9.549<small>Vem de P = T × ω, com ω (velocidade angular) em rad/s = 2π × n ÷ 60. A constante 9.549 ≈ 60.000 ÷ 2π.</small></div><p>Exemplo: 150 N·m a 4.000 rpm → 150 × 4.000 ÷ 9.549 = <b>62,8 kW</b>. Em cavalos: 1 cv = 0,7355 kW, então 62,8 ÷ 0,7355 = <b>85,4 cv</b>. O hp (horsepower) é um pouco diferente: 1 hp = 0,7457 kW.</p>
+ <h4>Por que o pico de potência vem depois do pico de torque</h4><p>Acima da rotação de torque máximo, o torque começa a cair, mas a rotação continua subindo. Enquanto a rotação cresce mais rápido do que o torque cai, a potência ainda aumenta. Por isso a potência máxima aparece numa rotação maior.</p>`,
+ vis:`<p>Arraste a rotação e veja torque e potência numa curva de motor. A curva é <b>didática</b>, criada para esta aula, e não representa um motor real.</p><div class="widget" id="w-torque"></div>`,
+ ex:`<p>Numa ultrapassagem, o motorista reduz uma marcha. A rotação sobe de 2.500 para 4.000 rpm. Pela curva, o torque disponível é maior em 4.000 rpm e a potência também: com a mesma velocidade do carro, há mais energia por segundo para acelerar. É por isso que “reduzir para ultrapassar” funciona.</p>`,
+ fal:`<p>Perda de torque é sentida como carro “sem força”. Causas comuns:</p><ul><li><b>Em baixa rotação:</b> embreagem patinando (o giro sobe e o carro não acompanha), mistura pobre, falha de ignição.</li><li><b>Em alta rotação:</b> filtro de ar obstruído, catalisador entupido, bomba de combustível fraca.</li><li><b>Sempre:</b> baixa compressão, sincronismo fora de ponto.</li></ul>`,
+ diag:`<ol><li>Confirme se a queixa é de motor ou de transmissão: em subida, o giro sobe sem ganho de velocidade? Isso é embreagem patinando, não falta de torque.</li><li>Leia códigos de falha e parâmetros no scanner.</li><li>Compare com os valores do fabricante. Potência e torque nominais são medidos em condições padronizadas; uma medição em dinamômetro varia com temperatura, altitude e combustível.</li></ol>`,
+ res:[['Torque','Esforço de girar, em N·m'],['Rotação','Voltas por minuto, em rpm'],['Potência','Torque × rotação: kW = N·m × rpm ÷ 9.549'],['cv × hp','1 cv = 0,7355 kW; 1 hp = 0,7457 kW'],['Curva','Pico de potência vem depois do pico de torque'],['Embreagem patinando','Imita falta de torque']],
+ quiz:[
+  {q:'Uma força de 200 N aplicada a 0,25 m do eixo produz qual torque?',o:['25 N·m','50 N·m','80 N·m','800 N·m'],c:1,e:'T = F × d = 200 × 0,25 = 50 N·m.'},
+  {q:'Um motor entrega 200 N·m a 3.000 rpm. Sua potência nesse ponto é aproximadamente:',o:['32,8 kW','62,8 kW','83,9 kW','600 kW'],c:1,e:'200 × 3.000 ÷ 9.549 ≈ 62,8 kW.'},
+  {q:'Por que a potência máxima costuma aparecer acima da rotação de torque máximo?',o:['Porque o torque aumenta sem parar','Porque a rotação cresce mais rápido do que o torque cai','Porque a potência não depende do torque','Por causa do câmbio'],c:1,e:'P = T × n. Enquanto n cresce mais do que T diminui, o produto ainda aumenta.'},
+  {q:'O giro do motor sobe na subida, mas o carro não ganha velocidade. A suspeita principal é:',o:['Falta de torque do motor','Embreagem patinando','Pneus calibrados','Sonda lambda'],c:1,e:'O motor gira, mas o torque não chega às rodas: a embreagem está escorregando.'}],
+ des:`<p>Use a <a href="#ferramentas">calculadora de potência</a>: um motor tem 180 N·m a 4.500 rpm. Calcule a potência em kW e em cv. Depois descubra a qual rotação ele precisaria girar, com o mesmo torque, para chegar a 100 kW.</p>`,
+ next:'n2-quatro-tempos'},
+'n2-quatro-tempos':{lv:2,t:'O ciclo de quatro tempos',dur:'35 min',
+ obj:'Descrever cada tempo do ciclo Otto, o papel das válvulas e da vela e por que o ciclo leva duas voltas do virabrequim.',
+ pre:'Aulas do Nível 1. Saber o que é rotação (rpm).',
+ intro:`<p>Dentro de cada cilindro acontece uma sequência que se repete: <b>aspirar, apertar, explodir e soprar</b>. O pistão desce para puxar ar e combustível, sobe para comprimir a mistura, é empurrado para baixo pela combustão e sobe de novo para expulsar o que queimou.</p><p>Cada um desses movimentos é um “tempo”. Quatro tempos completam um ciclo, e o pistão sobe e desce duas vezes, então o virabrequim dá duas voltas (720°).</p>`,
+ tec:`<h4>1. Admissão (0° a 180°)</h4><p>O pistão desce do ${T('PMS','Ponto morto superior: posição mais alta do pistão')} ao ${T('PMI','Ponto morto inferior: posição mais baixa do pistão')}. A válvula de admissão está aberta e a depressão criada no cilindro puxa a mistura. Na injeção indireta entra ar com combustível; na injeção direta entra só ar e o combustível é injetado na câmara.</p>
+ <h4>2. Compressão (180° a 360°)</h4><p>As duas válvulas fecham. O pistão sobe e comprime a mistura. Comprimir aumenta pressão e temperatura e deixa a queima mais rápida e eficiente.</p>
+ <h4>3. Combustão e expansão (360° a 540°)</h4><p>Pouco antes do PMS a vela solta a faísca. Esse adiantamento é o ${T('avanço de ignição','Quantos graus antes do PMS a faísca acontece. A ECU ajusta conforme rotação e carga')}: a mistura leva um tempo para queimar, e o pico de pressão deve acontecer logo depois do PMS. A pressão empurra o pistão para baixo. É o <b>único tempo que produz trabalho</b>; os outros três consomem parte dessa energia, guardada no volante e nos outros cilindros.</p>
+ <h4>4. Escape (540° a 720°)</h4><p>A válvula de escape abre e o pistão sobe empurrando os gases queimados para o coletor de escape.</p>
+ <h4>Por que o comando gira na metade da rotação</h4><p>Cada válvula abre uma vez por ciclo, e o ciclo dura duas voltas do virabrequim. Por isso a engrenagem do comando tem o dobro de dentes da engrenagem do virabrequim: relação 2:1.</p>
+ <div class="note didatic"><b>Simplificação didática</b>No laboratório cada válvula abre exatamente no PMS ou PMI. Nos motores reais a admissão abre antes do PMS e fecha depois do PMI, e há um período em que as duas ficam abertas ao mesmo tempo (cruzamento de válvulas). Esses ângulos variam por motor e, em muitos, mudam com o comando variável.</div>
+ <h4>Ordem de ignição</h4><p>Em um 4 cilindros em linha, a ordem mais comum é 1-3-4-2: há uma combustão a cada 180° de virabrequim, distribuindo os esforços. No laboratório, as etiquetas de cada cilindro mostram em que tempo cada um está.</p>`,
+ vis:`<p>O diagrama abaixo mostra os 720° do ciclo de um cilindro. No laboratório 3D, pause e avance tempo a tempo para ver válvulas, pistão e gases.</p><div class="widget" id="w-ring"></div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm primary" href="#laboratorio" data-labstep="1">Abrir no laboratório em câmera lenta</a></div>`,
+ ex:`<p>Um motor 4 cilindros a 3.000 rpm. Cada cilindro faz uma combustão a cada duas voltas: 3.000 ÷ 2 = 1.500 combustões por minuto por cilindro. Com quatro cilindros, são 6.000 combustões por minuto, ou <b>100 por segundo</b>. É esse ritmo que torna o funcionamento suave.</p>`,
+ fal:`<div class="tbl"><table><tr><th>Falha</th><th>Tempo afetado</th><th>Sintoma</th></tr>
+ <tr><td>Bobina ou vela com defeito</td><td>Combustão não acontece</td><td>Trepidação, luz de injeção piscando</td></tr>
+ <tr><td>Válvula queimada ou sem assentar</td><td>Compressão vaza</td><td>Baixa compressão em um cilindro</td></tr>
+ <tr><td>Anéis gastos</td><td>Compressão vaza para o cárter</td><td>Consumo de óleo, fumaça azulada</td></tr>
+ <tr><td>Correia pulou dentes</td><td>Válvulas fora de tempo</td><td>Motor fraco ou não pega</td></tr>
+ <tr><td>Entrada falsa de ar</td><td>Admissão recebe ar não medido</td><td>Marcha lenta irregular</td></tr></table></div>`,
+ diag:`<p>Quando um cilindro não trabalha, pense nos três requisitos da combustão: <b>faísca</b>, <b>combustível</b> e <b>compressão</b>, além do sincronismo. Teste cada um isoladamente no cilindro suspeito. É exatamente o raciocínio do <a href="#simulador">Caso 01 do simulador</a>.</p>`,
+ res:[['Admissão','Desce, válvula de admissão aberta'],['Compressão','Sobe, válvulas fechadas'],['Combustão','Faísca antes do PMS; único tempo de trabalho'],['Escape','Sobe, válvula de escape aberta'],['720°','Duas voltas por ciclo'],['Comando 2:1','Gira na metade do virabrequim']],
+ quiz:[
+  {q:'Em qual tempo as duas válvulas estão fechadas e o pistão está subindo?',o:['Admissão','Compressão','Combustão','Escape'],c:1,e:'Na compressão as válvulas fecham e o pistão sobe comprimindo a mistura.'},
+  {q:'Quantas voltas o virabrequim dá durante um ciclo completo de quatro tempos?',o:['Meia','Uma','Duas','Quatro'],c:2,e:'Quatro cursos do pistão equivalem a duas voltas: 720°.'},
+  {q:'Por que a faísca acontece antes do PMS?',o:['Para economizar bateria','Porque a mistura leva tempo para queimar e o pico de pressão deve vir logo após o PMS','Para abrir a válvula de escape','Porque a ECU está atrasada'],c:1,e:'O avanço compensa o tempo de queima.'},
+  {q:'A 2.400 rpm, quantas combustões por minuto um único cilindro faz?',o:['600','1.200','2.400','4.800'],c:1,e:'Uma combustão a cada duas voltas: 2.400 ÷ 2 = 1.200.'}],
+ des:`<p>No laboratório, pause no início da admissão do cilindro 1 e avance tempo a tempo. Anote em que tempo estão os cilindros 2, 3 e 4 em cada parada. Com isso, confirme a ordem de ignição 1-3-4-2 olhando qual cilindro entra em combustão depois de qual.</p>`,
+ next:'n2-cilindrada'},
+'n2-cilindrada':{lv:2,t:'Cilindrada e taxa de compressão',dur:'30 min',
+ obj:'Calcular a cilindrada de um motor e sua taxa de compressão, e entender o que muda quando essas medidas mudam.',
+ pre:'Aula “O ciclo de quatro tempos”.',
+ intro:`<p>A <b>cilindrada</b> é o volume de ar que os pistões “varrem” ao descer do PMS ao PMI, somando todos os cilindros. Quando se fala em motor 1.0 ou 1.6, fala-se de cerca de 1.000 ou 1.600 cm³.</p><p>A <b>taxa de compressão</b> diz quantas vezes a mistura é espremida: compara o volume do cilindro com o pistão embaixo com o volume que sobra com o pistão em cima.</p>`,
+ tec:`<h4>Cilindrada</h4><div class="formula">V = (π ÷ 4) × D² × C × N<small>D = diâmetro do cilindro, C = curso do pistão, N = número de cilindros. Com D e C em mm, divida por 1.000 para obter cm³.</small></div><p>Exemplo: D = 79,0 mm, C = 81,5 mm, 4 cilindros → 0,7854 × 6.241 × 81,5 × 4 ÷ 1.000 = <b>1.598 cm³</b>. Esse é um motor “1.6”.</p>
+ <h4>Taxa de compressão</h4><div class="formula">ε = (Vd + Vc) ÷ Vc<small>Vd = cilindrada de um cilindro; Vc = volume da câmara com o pistão no PMS (inclui o volume na junta e no rebaixo do pistão).</small></div><p>Exemplo: Vd = 399,5 cm³ e Vc = 38 cm³ → (399,5 + 38) ÷ 38 = <b>11,5 : 1</b>.</p>
+ <p>Motores Otto costumam ficar numa faixa de cerca de 9:1 a 13:1, limitados pela ${T('detonação','Queima espontânea e descontrolada de parte da mistura, que causa a “batida de pino”')}. Motores Diesel usam taxas bem mais altas, porque a ignição depende do calor da compressão. O valor de cada motor está na especificação do fabricante.</p>
+ <h4>Quadrado, subquadrado e superquadrado</h4><p>Se o diâmetro é igual ao curso, o motor é “quadrado”. Curso maior que o diâmetro (subquadrado) tende a favorecer torque em baixa; diâmetro maior que o curso (superquadrado) permite girar mais alto com menor velocidade do pistão. É uma tendência de projeto, não uma regra absoluta.</p>`,
+ vis:`<p>Mude diâmetro, curso, número de cilindros e volume da câmara. Os valores iniciais são do exemplo acima.</p><div class="widget" id="w-cil"></div>`,
+ ex:`<p>Na retífica, o cabeçote empenado é planado e perde 0,3 mm de altura. A câmara fica menor, Vc cai, e a taxa de compressão sobe. Se ela subir demais, o motor pode passar a detonar. Por isso a retífica consulta a especificação do motor e, se necessário, usa junta de espessura adequada.</p>`,
+ fal:`<ul><li><b>Carbonização no topo do pistão:</b> reduz Vc e aumenta a taxa efetiva, favorecendo detonação.</li><li><b>Junta de cabeçote errada:</b> uma junta mais fina sobe a taxa; mais grossa, reduz.</li><li><b>Cilindro ovalizado:</b> não altera a cilindrada de forma relevante, mas prejudica a vedação dos anéis e reduz a compressão medida.</li></ul>`,
+ diag:`<p>A taxa de compressão é geométrica; o <b>teste de compressão</b> mede a pressão que o cilindro alcança na partida. São coisas diferentes: um motor com taxa correta pode ter compressão baixa por vazamento em válvulas, anéis ou junta. No diagnóstico, compare os cilindros entre si e com o valor do fabricante. Diferença grande entre cilindros pesa mais que o número isolado.</p>`,
+ res:[['Cilindrada','Volume varrido de todos os cilindros'],['Fórmula','π/4 × D² × C × N'],['Taxa','(Vd + Vc) ÷ Vc'],['Otto × Diesel','Diesel usa taxa bem maior'],['Planar cabeçote','Aumenta a taxa'],['Compressão medida','Não é a mesma coisa que taxa']],
+ quiz:[
+  {q:'Um motor de 4 cilindros tem 400 cm³ por cilindro. Sua cilindrada total é:',o:['400 cm³','1.000 cm³','1.600 cm³','4.000 cm³'],c:2,e:'4 × 400 = 1.600 cm³.'},
+  {q:'Vd = 300 cm³ e Vc = 30 cm³. A taxa de compressão é:',o:['10:1','11:1','9:1','30:1'],c:1,e:'(300 + 30) ÷ 30 = 11.'},
+  {q:'Planar o cabeçote, sem outra compensação, tende a:',o:['Reduzir a taxa','Aumentar a taxa','Aumentar a cilindrada','Não mudar nada'],c:1,e:'O volume da câmara diminui, então a taxa aumenta.'},
+  {q:'O teste de compressão mediu valores baixos em um cilindro. Isso indica:',o:['Taxa geométrica errada','Provável vazamento nesse cilindro','Cilindrada menor','Motor superquadrado'],c:1,e:'Pressão baixa em um cilindro aponta para vazamento: válvula, anéis ou junta.'}],
+ des:`<p>Pesquise no manual de um carro que você conheça o diâmetro, o curso e o número de cilindros. Calcule a cilindrada na <a href="#ferramentas">calculadora</a> e compare com o valor anunciado. A diferença costuma vir de arredondamento.</p>`,
+ next:'n7-falha'},
+'n7-falha':{lv:7,t:'Diagnóstico por sintomas: falha de combustão',dur:'35 min',
+ obj:'Aplicar um método de diagnóstico para encontrar a causa de uma falha de combustão em um cilindro, sem trocar peças por tentativa.',
+ pre:'Aulas do Nível 2, especialmente “O ciclo de quatro tempos”.',
+ intro:`<p>“O motor está falhando” é uma queixa, não um diagnóstico. Antes de trocar qualquer peça, o mecânico confirma o problema, junta dados e faz testes que separam uma causa da outra. Trocar peças no chute custa caro e muitas vezes não resolve.</p>`,
+ tec:`<h4>O método em seis etapas</h4><ol><li><b>Confirmar a queixa:</b> ver, ouvir e sentir o problema. Em que condição acontece: frio, quente, marcha lenta, carga?</li><li><b>Coletar dados:</b> histórico de manutenção, códigos de falha (${T('DTC','Diagnostic Trouble Code: código de falha gravado pela ECU')}), parâmetros em tempo real.</li><li><b>Formular hipóteses:</b> listar o que poderia causar aquele quadro.</li><li><b>Testar para separar hipóteses:</b> escolher testes cujo resultado mude a lista. Um bom teste elimina possibilidades.</li><li><b>Reparar a causa raiz:</b> só o que o teste apontou.</li><li><b>Confirmar o reparo:</b> apagar códigos, repetir a condição da queixa, conferir que o problema não volta.</li></ol>
+ <h4>Códigos OBD-II de falha de combustão</h4><p>O padrão OBD-II define códigos genéricos: <b>P0300</b> para falha aleatória ou em vários cilindros, e <b>P0301 a P0308</b> para falha em um cilindro específico (o último dígito é o número do cilindro). O código diz <b>onde</b> a ECU percebeu a falha, não <b>por que</b> ela acontece.</p>
+ <h4>Como a ECU percebe a falha</h4><p>O sensor de rotação lê os dentes da roda fônica no virabrequim. Cada combustão dá um pequeno impulso de aceleração ao eixo. Se um cilindro não queima, aquele impulso falta e a ECU percebe a variação de velocidade naquele intervalo.</p>
+ <h4>A troca cruzada</h4><p>Em motores com bobina individual, trocar a bobina do cilindro suspeito com a de outro cilindro é um teste barato e muito informativo: se a falha “muda de cilindro” junto com a bobina, a bobina é a causa. Se fica no mesmo cilindro, a causa está em outra coisa daquele cilindro. O mesmo vale para velas e, com mais trabalho, para bicos.</p>`,
+ vis:`<p>Pratique o método no simulador. O Caso 01 é exatamente uma falha de combustão em um cilindro.</p><div style="margin-top:12px"><a class="btn sm primary" href="#simulador">Iniciar o Caso 01</a></div>`,
+ ex:`<p>Um carro chega com trepidação em marcha lenta e código P0302. O mecânico troca a bobina do cilindro 2 com a do cilindro 3, apaga o código e roda o motor. O scanner passa a mostrar P0303. A falha seguiu a bobina: ela é a causa. Troca-se só a bobina, sem mexer em velas, bicos ou sonda.</p>`,
+ fal:`<div class="tbl"><table><tr><th>Causa</th><th>Pista que aponta para ela</th></tr>
+ <tr><td>Bobina</td><td>Falha migra com a bobina na troca cruzada</td></tr>
+ <tr><td>Vela</td><td>Eletrodo gasto, trincado ou com depósito; falha migra com a vela</td></tr>
+ <tr><td>Bico injetor</td><td>Sem pulso no conector ou bico entupido; vela seca naquele cilindro</td></tr>
+ <tr><td>Compressão</td><td>Teste de compressão baixo só naquele cilindro</td></tr>
+ <tr><td>Entrada falsa de ar</td><td>Costuma gerar falha em vários cilindros (P0300) e correção de combustível positiva</td></tr></table></div>`,
+ diag:`<p>Para um código P030X, uma ordem eficiente é: inspeção visual de conectores → troca cruzada da bobina → inspeção da vela → verificação do pulso do bico → teste de compressão. Os primeiros testes são rápidos e baratos; os últimos levam mais tempo.</p><div class="note safety"><b>Segurança</b>Desligue a ignição antes de desconectar bobinas. Puxar uma bobina com o motor ligado expõe você a alta tensão e pode danificar a bobina, o módulo e o catalisador. O sistema de combustível trabalha sob pressão: só abra linhas seguindo o procedimento do fabricante.</div>`,
+ res:[['Queixa ≠ diagnóstico','Confirme antes de agir'],['Código','Diz onde, não por quê'],['P0301–P0308','Falha no cilindro indicado'],['Bom teste','Elimina hipóteses'],['Troca cruzada','Barata e conclusiva'],['Confirmar','Repita a condição da queixa']],
+ quiz:[
+  {q:'O código P0304 indica:',o:['Falha no sensor de rotação','Falha de combustão detectada no cilindro 4','Bobina 4 queimada','Mistura pobre'],c:1,e:'P030X: falha de combustão no cilindro X. A causa ainda precisa ser descoberta.'},
+  {q:'Após trocar a bobina do cilindro 2 com a do 3, o código mudou de P0302 para P0303. Conclusão:',o:['A vela do cilindro 2 está ruim','A bobina que estava no cilindro 2 está com defeito','A ECU está com defeito','O cilindro 3 tem baixa compressão'],c:1,e:'A falha acompanhou a bobina.'},
+  {q:'Qual destas ações é a menos adequada como primeiro passo?',o:['Confirmar a queixa','Ler códigos e parâmetros','Trocar a sonda lambda','Consultar o histórico'],c:2,e:'Trocar peças sem evidência é tentativa, não diagnóstico.'},
+  {q:'Como a ECU detecta uma falha de combustão?',o:['Pela temperatura do líquido','Pela variação de velocidade do virabrequim lida no sensor de rotação','Pelo nível de óleo','Pela pressão dos pneus'],c:1,e:'A falta do impulso da combustão aparece como desaceleração momentânea do virabrequim.'}],
+ des:`<p>Resolva o <a href="#simulador">Caso 01</a> e tente fazer mais de 85 pontos. Para isso, escolha testes que separem hipóteses, evite trocas sem evidência e confirme o reparo.</p>`,
+ next:null}
+};
+const LESSON_IDS=Object.keys(LESSONS);
+
+/* ================= ROTEAMENTO ================= */
+let hero=null, lab=null, labInit=false;
+function route(){
+  let h=(location.hash||'#inicio').slice(1)||'inicio';
+  let view=h, anchor=null;
+  if(h.startsWith('aula-')||h.startsWith('nivel-')||h==='cursos')view='cursos';
+  else if(['trilhas','sistemas','sobre'].includes(h)){view='inicio';anchor=h;}
+  else if(!document.getElementById('v-'+h))view='inicio';
+  $$('section.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+view));
+  $$('nav.main a').forEach(a=>a.classList.toggle('on',a.dataset.r===h||(a.dataset.r==='cursos'&&view==='cursos'&&!['nivel-1','nivel-2'].includes(h)&&!(h.startsWith('aula-n1')||h.startsWith('aula-n2')))||(a.dataset.r==='nivel-1'&&h.startsWith('aula-n1'))||(a.dataset.r==='nivel-2'&&h.startsWith('aula-n2'))));
+  $('#nav').classList.remove('open');$('#menuBtn').setAttribute('aria-expanded','false');
+  if(view==='cursos')renderStudy(h);
+  if(view==='progresso')renderProgress();
+  if(view==='laboratorio')initLab();
+  if(hero)hero.setActive(view==='inicio');
+  if(lab)lab.setActive(view==='laboratorio');
+  if(anchor){requestAnimationFrame(()=>{const el=document.getElementById(anchor);if(el)el.scrollIntoView({behavior:reduceMotion?'auto':'smooth'});});}
+  else window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+$('#menuBtn').addEventListener('click',()=>{const o=$('#nav').classList.toggle('open');$('#menuBtn').setAttribute('aria-expanded',o);});
+
+/* ================= HOME ================= */
+function renderTrails(){
+  $('#trailsBox').innerHTML=TRAILS.map((tr,i)=>{
+    const ls=LEVELS.filter(l=>tr.lv.includes(l.n)).flatMap(l=>l.lessons);
+    const done=ls.filter(id=>P.lessons[id]).length;
+    const pct=ls.length?Math.round(done/ls.length*100):0;
+    const first=LEVELS.find(l=>tr.lv.includes(l.n));
+    return `<div class="trail"><div class="lv">Níveis ${tr.lv[0]}–${tr.lv[tr.lv.length-1]}</div><h3>${tr.t}</h3><p>${tr.d}</p>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="meta"><span>${ls.length?done+'/'+ls.length+' aulas':'Em produção'}</span><span>${ls.length?pct+'%':''}</span></div>
+    <a class="btn sm ${i===0?'primary':''}" href="#nivel-${first.n}">${i===0?'Começar trilha':'Ver níveis'}</a></div>`;}).join('');
+}
+const SYS={
+ motor:{t:'Motor',d:'Transforma o calor da queima do combustível em rotação. Pistões sobem e descem; bielas e virabrequim convertem isso em giro.',go:['#laboratorio','Ver motor em 3D'],aula:['#aula-n2-quatro-tempos','Aula: ciclo de quatro tempos']},
+ transmissao:{t:'Transmissão',d:'Embreagem, câmbio e diferencial adaptam a rotação do motor à velocidade do carro e levam o torque até as rodas.',go:['#nivel-5','Nível 5'],aula:['#aula-n1-sistemas','Aula: os sistemas do carro']},
+ freios:{t:'Freios',d:'Transformam a energia do movimento em calor por atrito entre pastilhas e discos (ou lonas e tambores). O ABS evita o travamento das rodas.',go:['#nivel-6','Nível 6'],aula:null,warn:'Sistema de segurança: qualquer reparo exige procedimento correto e teste antes de rodar.'},
+ suspensao:{t:'Suspensão',d:'Molas sustentam o peso; amortecedores controlam o balanço. Juntas, bandejas e buchas definem a geometria das rodas.',go:['#nivel-6','Nível 6'],aula:null},
+ eletrico:{t:'Sistema elétrico',d:'A bateria dá a partida; com o motor ligado, o alternador gera energia e recarrega a bateria. Módulos eletrônicos controlam injeção, ignição e segurança.',go:['#nivel-4','Nível 4'],aula:null},
+ alimentacao:{t:'Alimentação',d:'Bomba elétrica no tanque envia combustível sob pressão aos bicos injetores, que pulverizam a quantidade calculada pela ECU.',go:['#nivel-3','Nível 3'],aula:null,warn:'Linhas de combustível ficam pressurizadas mesmo com o motor desligado.'},
+ direcao:{t:'Direção',d:'Converte o giro do volante em movimento lateral das rodas dianteiras, com assistência hidráulica ou elétrica.',go:['#nivel-6','Nível 6'],aula:null},
+ arrefecimento:{t:'Arrefecimento',d:'Líquido circula pelo motor, absorve calor e o libera no radiador. A válvula termostática controla a temperatura de trabalho.',go:['#nivel-2','Nível 2'],aula:['#aula-n1-sistemas','Aula: os sistemas do carro'],warn:'Não abra o reservatório com o motor quente: o líquido está sob pressão.'}
+};
+function showSys(k){
+  const s=SYS[k];
+  $$('.hot').forEach(g=>g.classList.toggle('on',g.dataset.sys===k));
+  $$('#sysChips button').forEach(b=>b.classList.toggle('on',b.dataset.sys===k));
+  $('#sysInfo').innerHTML=`<div class="eyebrow">Sistema selecionado</div><h3 style="font-size:30px">${s.t}</h3><p style="color:#cbd3db">${s.d}</p>${s.warn?`<div class="note safety"><b>Atenção</b>${s.warn}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px"><a class="btn sm primary" href="${s.go[0]}">${s.go[1]}</a>${s.aula?`<a class="btn sm" href="${s.aula[0]}">${s.aula[1]}</a>`:''}</div>`;
+}
+const PATH=[
+ ['Combustível','Energia química guardada no tanque.','O combustível guarda energia química. A bomba o leva até os bicos, que o pulverizam no ar admitido.'],
+ ['Motor','Calor vira rotação.','A combustão empurra os pistões; bielas e virabrequim transformam o vaivém em rotação. É aqui que nasce o torque.'],
+ ['Embreagem','Liga e desliga.','A embreagem acopla o motor ao câmbio. Ao pisar no pedal, o motor continua girando sem mover o carro.'],
+ ['Câmbio','Multiplica torque.','Cada marcha é uma relação de engrenagens. A 1ª reduz muito a rotação e multiplica o torque; as marchas altas fazem o contrário.'],
+ ['Diferencial','Divide entre as rodas.','Faz a redução final e divide o torque entre as rodas, deixando a roda de fora girar mais rápido nas curvas.'],
+ ['Rodas','Movimento.','Semieixos e juntas homocinéticas giram as rodas. O atrito dos pneus com o piso empurra o carro para a frente.']];
+function renderPath(){
+  $('#torquePath').innerHTML=PATH.map((p,i)=>`<div class="st" data-i="${i}" role="button" tabindex="0"><span class="n">${String(i+1).padStart(2,'0')}</span><b>${p[0]}</b><small>${p[1]}</small></div>`).join('');
+  const sel=i=>{$$('#torquePath .st').forEach((s,j)=>s.classList.toggle('on',j<=i));$('#torqueNote').innerHTML=`<b>${PATH[i][0]}:</b> ${PATH[i][2]}`;};
+  $$('#torquePath .st').forEach(s=>{s.addEventListener('click',()=>sel(+s.dataset.i));s.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sel(+s.dataset.i);}});});
+  sel(1);
+}
+
+/* ================= ESTUDO ================= */
+function renderSide(cur){
+  let h=`<a href="#cursos" class="${cur==='cursos'?'on':''}"><span>Visão geral do curso</span></a>`;
+  LEVELS.forEach(l=>{
+    h+=`<h4>Nível ${l.n}</h4><a href="#nivel-${l.n}" class="${cur==='nivel-'+l.n?'on':''}"><span>${l.t}</span>${l.lessons.length?'':'<span class="soon">em produção</span>'}</a>`;
+    l.lessons.forEach(id=>{h+=`<a class="lesson ${cur==='aula-'+id?'on':''}" href="#aula-${id}"><span>${LESSONS[id].t}</span><span class="dot ${P.lessons[id]?'done':''}"></span></a>`;});
+  });
+  $('#side').innerHTML=h;
+}
+$('#sideToggle').addEventListener('click',()=>$('#side').classList.toggle('open'));
+function renderStudy(h){
+  renderSide(h);$('#side').classList.remove('open');
+  const m=$('#studyMain');
+  if(h==='cursos'){
+    m.innerHTML=`<div class="lesson" style="max-width:1000px"><div class="eyebrow">Curso completo</div><h2 style="margin-top:8px">Mecânica automotiva em 11 níveis</h2><p class="muted" style="margin-top:10px;max-width:64ch">Os níveis 1, 2 e 7 já têm aulas completas. Os demais mostram o conteúdo programado e serão liberados em sequência, mantendo o mesmo padrão de aula.</p>
+    <div class="levels" style="margin-top:24px">${LEVELS.map(l=>`<a class="lvl" href="#nivel-${l.n}"><div class="top-row"><span class="num">${String(l.n).padStart(2,'0')}</span>${l.lessons.length?`<span class="chip ok">${l.lessons.length} aula${l.lessons.length>1?'s':''}</span>`:'<span class="chip">Em produção</span>'}</div><h4>${l.t}</h4><p>${l.d}</p></a>`).join('')}</div></div>`;
+    return;
+  }
+  if(h.startsWith('nivel-')){
+    const l=LEVELS.find(x=>'nivel-'+x.n===h)||LEVELS[0];
+    m.innerHTML=`<div class="lesson"><div class="eyebrow">Nível ${l.n}</div><h2 style="margin-top:8px">${l.t}</h2><p class="muted" style="margin-top:10px">${l.d}</p>
+    ${l.lessons.length?`<div class="blk"><div class="lab">Aulas disponíveis</div><div class="levels">${l.lessons.map(id=>`<a class="lvl" href="#aula-${id}"><div class="top-row"><span class="chip blue">${LESSONS[id].dur}</span>${P.lessons[id]?'<span class="chip ok">Concluída</span>':''}</div><h4>${LESSONS[id].t}</h4><p>${LESSONS[id].obj}</p></a>`).join('')}</div></div>`:`<div class="note" style="margin-top:20px"><b>Em produção</b>As aulas deste nível ainda estão sendo escritas. Enquanto isso, você pode avançar pelos níveis disponíveis.</div>`}
+    <div class="blk"><div class="lab">Conteúdo programático</div><ul>${l.topics.map(t=>`<li>${t}</li>`).join('')}</ul></div></div>`;
+    return;
+  }
+  const id=h.slice(5), L=LESSONS[id];
+  if(!L){m.innerHTML='<p>Aula não encontrada. <a href="#cursos">Voltar ao curso</a></p>';return;}
+  const lv=LEVELS.find(x=>x.n===L.lv);
+  const n=(k,t)=>`<div class="lab">${t}</div>`;
+  m.innerHTML=`<article class="lesson">
+   <div class="lesson-head"><div class="row"><span class="chip orange">Nível ${L.lv} · ${lv.t}</span><span class="chip">${L.dur}</span>${P.lessons[id]?'<span class="chip ok">Concluída</span>':''}</div>
+   <h2>${L.t}</h2><div class="row"><button class="btn sm" id="favBtn">${P.fav[id]?'★ Favorita':'☆ Favoritar'}</button></div></div>
+   <div class="blk">${n(1,'Objetivo da aula')}<p>${L.obj}</p></div>
+   <div class="blk">${n(2,'Pré-requisitos')}<p>${L.pre}</p></div>
+   <div class="blk">${n(3,'Introdução simples')}${L.intro}</div>
+   <div class="blk">${n(4,'Explicação técnica')}${L.tec}</div>
+   <div class="blk">${n(5,'Visualização interativa')}${L.vis}</div>
+   <div class="blk">${n(6,'Exemplo prático')}${L.ex}</div>
+   <div class="blk">${n(7,'Falhas comuns')}${L.fal}</div>
+   <div class="blk">${n(8,'Diagnóstico guiado')}${L.diag}</div>
+   <div class="blk">${n(9,'Resumo visual')}<div class="summary">${L.res.map(r=>`<div><b>${r[0]}</b>${r[1]}</div>`).join('')}</div></div>
+   <div class="blk">${n(10,'Questionário')}<div class="quiz" id="quiz"></div></div>
+   <div class="blk">${n(11,'Desafio prático')}${L.des}</div>
+   <div class="blk" style="border-bottom:none">${n(12,'Próxima aula')}
+    <div class="lesson-nav"><button class="btn ${P.lessons[id]?'':'orange'}" id="doneBtn">${P.lessons[id]?'✓ Aula concluída':'Marcar aula como concluída'}</button>
+    ${L.next?`<a class="btn primary" href="#aula-${L.next}">${LESSONS[L.next].t} →</a>`:`<a class="btn primary" href="#simulador">Ir para o simulador →</a>`}</div></div>
+  </article>`;
+  $('#favBtn').onclick=()=>{P.fav[id]=!P.fav[id];if(!P.fav[id])delete P.fav[id];saveP();$('#favBtn').textContent=P.fav[id]?'★ Favorita':'☆ Favoritar';};
+  $('#doneBtn').onclick=()=>{if(!P.lessons[id]){P.lessons[id]=Date.now();logH('Concluiu a aula “'+L.t+'”');saveP();}$('#doneBtn').textContent='✓ Aula concluída';$('#doneBtn').classList.remove('orange');renderSide(h);renderTrails();};
+  renderQuiz($('#quiz'),id,L.quiz);
+  if($('#w-torque'))mountTorque($('#w-torque'));
+  if($('#w-ring'))mountRing($('#w-ring'));
+  if($('#w-cil'))mountCil($('#w-cil'),'wc');
+  const ls=$('[data-labstep]',m);if(ls)ls.addEventListener('click',()=>{pendingLab={speed:0.25,A:0};});
+}
+function renderQuiz(box,id,qs){
+  box.innerHTML=qs.map((q,i)=>`<div class="q"><p>${i+1}. ${q.q}</p><div class="opts">${q.o.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}"><span>${o}</span></label>`).join('')}</div><div class="fb">${q.e}</div></div>`).join('')+
+   `<div class="res"><button class="btn primary" id="qCheck">Corrigir respostas</button><span id="qRes" class="muted">${P.quiz[id]!=null?'Melhor resultado: '+P.quiz[id]+'/'+qs.length:''}</span></div>`;
+  $('#qCheck',box).onclick=()=>{
+    let s=0,answered=0;
+    qs.forEach((q,i)=>{const sel=$(`input[name=q${i}]:checked`,box);$$(`input[name=q${i}]`,box).forEach(inp=>{const lb=inp.parentElement;lb.classList.remove('right','wrong');if(+inp.value===q.c)lb.classList.add('right');else if(inp.checked)lb.classList.add('wrong');});if(sel){answered++;if(+sel.value===q.c)s++;}});
+    box.classList.add('checked');
+    P.quiz[id]=Math.max(P.quiz[id]||0,s);logH('Questionário “'+LESSONS[id].t+'”: '+s+'/'+qs.length);saveP();
+    $('#qRes',box).innerHTML=`<b style="color:${s===qs.length?'var(--ok)':'var(--fg)'}">${s} de ${qs.length} corretas</b>${answered<qs.length?' · '+(qs.length-answered)+' sem resposta':''}`;
+  };
+}
+
+/* widgets */
+function mountTorque(el){
+  const Tq=n=>150-5e-6*Math.pow(n-4000,2), Pw=n=>Tq(n)*n/9549;
+  const W=640,H=280,L=50,R=50,Tp=20,B=40, x=n=>L+(n-1000)/(6500-1000)*(W-L-R), yT=t=>H-B-t/160*(H-Tp-B), yP=p=>H-B-p/90*(H-Tp-B);
+  let pt='',pp='';for(let n=1000;n<=6500;n+=100){pt+=(n===1000?'M':'L')+x(n).toFixed(1)+' '+yT(Tq(n)).toFixed(1);pp+=(n===1000?'M':'L')+x(n).toFixed(1)+' '+yP(Pw(n)).toFixed(1);}
+  let grid='';[0,40,80,120,160].forEach(t=>{grid+=`<line x1="${L}" x2="${W-R}" y1="${yT(t)}" y2="${yT(t)}" stroke="var(--line)"/><text x="${L-8}" y="${yT(t)+4}" text-anchor="end" fill="var(--gas-mix)" font-size="11" font-family="IBM Plex Mono,monospace">${t}</text>`;});
+  [0,30,60,90].forEach(p=>{grid+=`<text x="${W-R+8}" y="${yP(p)+4}" fill="var(--orange)" font-size="11" font-family="IBM Plex Mono,monospace">${p}</text>`;});
+  [1000,2000,3000,4000,5000,6000].forEach(n=>{grid+=`<text x="${x(n)}" y="${H-B+18}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="IBM Plex Mono,monospace">${n}</text>`;});
+  el.innerHTML=`<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="min-width:420px">${grid}
+   <text x="${L}" y="12" fill="var(--gas-mix)" font-size="11" font-family="IBM Plex Mono,monospace">TORQUE N·m</text><text x="${W-R}" y="12" text-anchor="end" fill="var(--orange)" font-size="11" font-family="IBM Plex Mono,monospace">POTÊNCIA kW</text>
+   <text x="${(W)/2}" y="${H-4}" text-anchor="middle" fill="var(--muted)" font-size="11" font-family="IBM Plex Mono,monospace">ROTAÇÃO (rpm)</text>
+   <path d="${pt}" fill="none" stroke="var(--gas-mix)" stroke-width="2.5"/><path d="${pp}" fill="none" stroke="var(--orange)" stroke-width="2.5"/>
+   <line id="tcur" y1="${Tp}" y2="${H-B}" stroke="var(--fg)" stroke-dasharray="3 3"/><circle id="tdotT" r="5" fill="var(--gas-mix)"/><circle id="tdotP" r="5" fill="var(--orange)"/></svg></div>
+   <div class="slider-row"><label for="trpm">Rotação do motor</label><input type="range" id="trpm" min="1000" max="6500" step="50" value="4000"><output id="trpmO" class="mono"></output></div>
+   <div class="readout"><div><small>Torque</small><b id="tT"></b></div><div><small>Potência</small><b id="tP"></b></div><div><small>Potência</small><b id="tC"></b></div></div>`;
+  const upd=()=>{const n=+$('#trpm').value,t=Tq(n),p=Pw(n);$('#trpmO').textContent=n.toLocaleString('pt-BR')+' rpm';$('#tT').textContent=fmt(t,1)+' N·m';$('#tP').textContent=fmt(p,1)+' kW';$('#tC').textContent=fmt(p/0.7355,1)+' cv';
+   $('#tcur').setAttribute('x1',x(n));$('#tcur').setAttribute('x2',x(n));$('#tdotT').setAttribute('cx',x(n));$('#tdotT').setAttribute('cy',yT(t));$('#tdotP').setAttribute('cx',x(n));$('#tdotP').setAttribute('cy',yP(p));};
+  $('#trpm').addEventListener('input',upd);upd();
+}
+function mountRing(el){
+  const C=2*Math.PI*80, q=C/4;
+  const cols=['var(--gas-mix)','var(--gas-comp)','var(--gas-burn)','var(--gas-exh)'];
+  const lab=[['Admissão','0–180°'],['Compressão','180–360°'],['Combustão','360–540°'],['Escape','540–720°']];
+  let arcs='';cols.forEach((c,i)=>{arcs+=`<circle cx="110" cy="110" r="80" fill="none" stroke="${c}" stroke-width="22" stroke-dasharray="${q-3} ${C-q+3}" stroke-dashoffset="${-i*q}" transform="rotate(-90 110 110)"/>`;});
+  const pos=[[160,40],[160,180],[60,180],[60,40]];
+  el.innerHTML=`<div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap"><svg viewBox="0 0 220 220" style="width:220px;max-width:100%;flex:none">${arcs}
+   <text x="110" y="104" text-anchor="middle" fill="var(--fg)" font-family="Saira Semi Condensed,sans-serif" font-size="26" font-weight="700">720°</text><text x="110" y="124" text-anchor="middle" fill="var(--muted)" font-family="IBM Plex Mono,monospace" font-size="10">2 VOLTAS</text>
+   <text x="110" y="14" text-anchor="middle" fill="var(--muted)" font-family="IBM Plex Mono,monospace" font-size="10">PMS</text><text x="110" y="216" text-anchor="middle" fill="var(--muted)" font-family="IBM Plex Mono,monospace" font-size="10">PMS (360°)</text></svg>
+   <div style="display:grid;gap:8px;flex:1;min-width:220px">${lab.map((l,i)=>`<div style="display:flex;gap:10px;align-items:center"><i style="width:14px;height:14px;border-radius:3px;background:${cols[i]};flex:none"></i><b style="font-family:var(--f-display);font-size:17px;min-width:110px">${l[0]}</b><span class="mono muted">${l[1]}</span></div>`).join('')}
+   <p class="muted" style="font-size:13.5px;margin-top:4px">O círculo representa um ciclo completo de um cilindro. Cada tempo ocupa 180° de virabrequim.</p></div></div>`;
+}
+function mountCil(el,px){
+  el.innerHTML=`<div class="fgrid">
+   <div class="field"><label for="${px}D">Diâmetro (mm)</label><input id="${px}D" type="number" step="0.1" value="79"></div>
+   <div class="field"><label for="${px}C">Curso (mm)</label><input id="${px}C" type="number" step="0.1" value="81.5"></div>
+   <div class="field"><label for="${px}N">Cilindros</label><input id="${px}N" type="number" step="1" min="1" value="4"></div>
+   <div class="field"><label for="${px}V">Câmara Vc (cm³)</label><input id="${px}V" type="number" step="0.1" value="38"></div></div>
+   <div class="out"><div class="readout" style="margin-top:0"><div><small>Por cilindro</small><b id="${px}o1"></b></div><div><small>Cilindrada total</small><b id="${px}o2" style="color:var(--orange)"></b></div><div><small>Taxa de compressão</small><b id="${px}o3"></b></div></div><p id="${px}o4"></p></div>`;
+  const u=()=>{const D=+$('#'+px+'D').value,C=+$('#'+px+'C').value,N=Math.max(1,Math.round(+$('#'+px+'N').value)),Vc=+$('#'+px+'V').value;
+   const vd=Math.PI/4*D*D*C/1000, tot=vd*N, e=Vc>0?(vd+Vc)/Vc:NaN;
+   $('#'+px+'o1').textContent=fmt(vd,1)+' cm³';$('#'+px+'o2').textContent=fmt(tot,0)+' cm³';$('#'+px+'o3').textContent=isFinite(e)?fmt(e,1)+' : 1':'—';
+   $('#'+px+'o4').textContent=`π/4 × ${fmt(D,1)}² × ${fmt(C,1)} × ${N} ÷ 1.000 = ${fmt(tot,1)} cm³ (≈ ${fmt(tot/1000,1)} L). Relação diâmetro/curso: ${fmt(D/C,2)} (${D>C*1.02?'superquadrado':D<C*0.98?'subquadrado':'quadrado'}).`;};
+  $$('input',el).forEach(i=>i.addEventListener('input',u));u();
+}
+
+/* ================= LABORATÓRIO ================= */
+let pendingLab=null, labTab='peca', guideStep=0;
+function initLab(){
+  if(!labInit){
+    labInit=true;
+    lab=createEngineViewer($('#labViewer'),{N:4,interactive:true});
+    renderToggles();renderPartList();renderPart(null);renderGuide();
+    if(lab){
+      lab.on('pick',k=>{showTab('peca');renderPart(k);});
+      lab.on('tick',labHud);
+      $('#bPlay').textContent=lab.isPaused()?'Reproduzir':'Pausar';
+    }
+  }
+  if(lab&&pendingLab){lab.setSpeed(pendingLab.speed);lab.setA(pendingLab.A);$$('#speedSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.s===pendingLab.speed));lab.setPaused(false);$('#bPlay').textContent='Pausar';pendingLab=null;}
+}
+const strokeOf=a=>STROKES[Math.floor((((a%720)+720)%720)/180)];
+let lastHud='';
+function labHud(A){
+  const s=strokeOf(A), key=s.k+'|'+Math.round(A);
+  if(key===lastHud)return;lastHud=key;
+  $('#strokeName').textContent=s.nome;$('#strokeName').style.color=s.cor;$('#strokeDesc').textContent=s.desc;
+  $('#angCrank').textContent=Math.round(A%360)+'°';$('#angCycle').textContent=Math.round(A)+'°';
+  if(lab.N===4){const ph=[0,540,180,360];$('#cylChips').innerHTML=ph.map((p,i)=>{const st=strokeOf(A-p);return `<span style="border-color:${st.cor};color:${st.cor}">C${i+1} ${st.nome}</span>`;}).join('');}
+  else $('#cylChips').innerHTML='';
+}
+$('#bPlay').addEventListener('click',()=>{if(!lab)return;lab.setPaused(!lab.isPaused());$('#bPlay').textContent=lab.isPaused()?'Reproduzir':'Pausar';});
+function stepStroke(dir){if(!lab)return;lab.setPaused(true);$('#bPlay').textContent='Reproduzir';const A=lab.getA(),cur=Math.floor(A/180);const k=dir>0?cur+1:((A-cur*180)>5?cur:cur-1);lab.setA(k*180+1);}
+$('#bNext').addEventListener('click',()=>stepStroke(1));
+$('#bPrev').addEventListener('click',()=>stepStroke(-1));
+$$('#speedSeg button').forEach(b=>b.addEventListener('click',()=>{$$('#speedSeg button').forEach(x=>x.classList.toggle('on',x===b));lab&&lab.setSpeed(+b.dataset.s);}));
+$('#explode').addEventListener('input',e=>lab&&lab.setExplode(+e.target.value));
+$$('#cylSeg button').forEach(b=>b.addEventListener('click',()=>{$$('#cylSeg button').forEach(x=>x.classList.toggle('on',x===b));if(lab){lab.setN(+b.dataset.n);Object.entries(visState).forEach(([k,v])=>lab.setVis(k,v));lab.setExplode(+$('#explode').value);lastHud='';}}));
+$$('.lab-panel .tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.t)));
+function showTab(t){labTab=t;$$('.lab-panel .tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));['peca','visao','guia'].forEach(k=>$('#tab-'+k).hidden=k!==t);}
+const visState={bloco:true,cabecote:true,comando:true,carter:true,camara:true,coletores:true};
+const VISLAB={bloco:'Bloco e cilindros',cabecote:'Cabeçote, válvulas e velas',comando:'Comando e correia',carter:'Cárter e óleo',camara:'Gases na câmara',coletores:'Coletores'};
+function renderToggles(){
+  $('#toggles').innerHTML=Object.keys(VISLAB).map(k=>`<label for="vis-${k}">${VISLAB[k]}<input type="checkbox" id="vis-${k}" ${visState[k]?'checked':''}></label>`).join('');
+  Object.keys(VISLAB).forEach(k=>$('#vis-'+k).addEventListener('change',e=>{visState[k]=e.target.checked;lab&&lab.setVis(k,e.target.checked);}));
+}
+function renderPartList(){
+  $('#partList').innerHTML=Object.keys(PARTS).map(k=>`<button data-p="${k}">${PARTS[k].nome}</button>`).join('');
+  $$('#partList button').forEach(b=>b.addEventListener('click',()=>{lab&&lab.select(b.dataset.p);showTab('peca');renderPart(b.dataset.p);}));
+}
+function renderPart(k){
+  $$('#partList button').forEach(b=>b.classList.toggle('on',b.dataset.p===k));
+  const box=$('#tab-peca');
+  if(!k){box.innerHTML=`<div class="eyebrow">Nenhuma peça selecionada</div><h3 style="margin-top:8px;font-size:24px">Clique em uma peça do motor</h3><p class="muted" style="margin-top:8px">Clique diretamente no modelo ou escolha na lista da aba Visualização. O painel mostra nome, função, conexões, sintomas de defeito e como diagnosticar.</p>
+   <div class="partlist" style="margin-top:14px">${['pistao','biela','virabrequim','comando','valvula_adm','vela'].map(p=>`<button data-q="${p}">${PARTS[p].nome}</button>`).join('')}</div>`;
+   $$('[data-q]',box).forEach(b=>b.addEventListener('click',()=>{lab&&lab.select(b.dataset.q);renderPart(b.dataset.q);}));return;}
+  const p=PARTS[k];
+  box.innerHTML=`<div class="pinfo"><div class="eyebrow">Componente</div><h3 style="margin-top:6px">${p.nome}</h3><p style="margin-top:8px;color:#d4dbe2">${p.funcao}</p>
+  <dl><div><dt>Localização</dt><dd>${p.local}</dd></div><div><dt>Como funciona</dt><dd>${p.como}</dd></div>
+  <div><dt>Conecta-se a</dt><dd>${p.con.join(' · ')}</dd></div>
+  <div><dt>Sintomas comuns de defeito</dt><dd><ul>${p.sint.map(s=>`<li>${s}</li>`).join('')}</ul></dd></div>
+  <div><dt>Métodos de diagnóstico</dt><dd><ul>${p.diag.map(s=>`<li>${s}</li>`).join('')}</ul></dd></div>
+  <div><dt>Manutenção</dt><dd>${p.manut}</dd></div><div><dt>Curiosidade</dt><dd>${p.curio}</dd></div></dl>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><a class="btn sm primary" href="#${p.aula}">Aula relacionada</a><button class="btn sm" id="clrSel">Limpar seleção</button></div></div>`;
+  $('#clrSel').onclick=()=>{lab&&lab.select(null);renderPart(null);};
+}
+const GUIDE=[
+ {t:'Conheça a estrutura',d:'O bloco aparece transparente. Gire o motor arrastando e observe os quatro cilindros alinhados, o cabeçote em cima e o cárter embaixo.',do:()=>{lab.select('bloco');}},
+ {t:'Pistão e biela',d:'Cada pistão sobe e desce dentro de um cilindro. A biela liga o pistão ao virabrequim e muda de inclinação a cada volta.',do:()=>{lab.select('pistao');}},
+ {t:'O virabrequim',d:'Os moentes dos cilindros 1 e 4 estão alinhados; os dos cilindros 2 e 3 estão do lado oposto. Repare que os pistões 1 e 4 sempre sobem juntos.',do:()=>{lab.select('virabrequim');}},
+ {t:'Admissão em câmera lenta',d:'A animação foi para 0,25× no início da admissão do cilindro 1. Veja a válvula azul descer e a câmara encher de mistura.',do:()=>{lab.select('valvula_adm');lab.setA(2);lab.setSpeed(0.25);lab.setPaused(false);setSpeedUI(0.25);}},
+ {t:'Compressão e faísca',d:'Pausado no fim da compressão. Avance com “Tempo ▶” e veja a vela acender e a câmara ficar laranja.',do:()=>{lab.select('vela');lab.setA(330);lab.setPaused(true);}},
+ {t:'O comando gira na metade',d:'Observe o eixo de comando no alto: enquanto o virabrequim dá duas voltas, cada came empurra sua válvula só uma vez.',do:()=>{lab.select('comando');lab.setSpeed(0.5);setSpeedUI(0.5);lab.setPaused(false);}},
+ {t:'Vista explodida',d:'Separamos cabeçote, comando e cárter. Use o controle “Vista explodida” para juntar de novo.',do:()=>{lab.select(null);lab.setExplode(0.8);$('#explode').value=0.8;}}
+];
+function setSpeedUI(s){$$('#speedSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.s===s));$('#bPlay').textContent=lab.isPaused()?'Reproduzir':'Pausar';}
+function renderGuide(){
+  const g=GUIDE[guideStep];
+  $('#tab-guia').innerHTML=`<div class="eyebrow">Aprendizagem guiada</div><h3 style="margin-top:6px;font-size:24px">Como o motor funciona por dentro</h3>
+  <div class="guided"><div class="gstep">Etapa ${guideStep+1} de ${GUIDE.length}</div><h4 style="margin:6px 0">${g.t}</h4><p style="font-size:14.5px;color:#d4dbe2">${g.d}</p>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm" id="gPrev" ${guideStep===0?'disabled':''}>Voltar</button><button class="btn sm primary" id="gGo">Mostrar no modelo</button><button class="btn sm" id="gNext" ${guideStep===GUIDE.length-1?'disabled':''}>Avançar</button></div></div>
+  <div class="bar" style="margin-top:14px"><i style="width:${(guideStep+1)/GUIDE.length*100}%"></i></div>
+  <p class="muted" style="font-size:13px;margin-top:14px">Depois do guia, faça a aula <a href="#aula-n2-quatro-tempos">O ciclo de quatro tempos</a>.</p>`;
+  $('#gPrev').onclick=()=>{guideStep--;renderGuide();runGuide();};
+  $('#gNext').onclick=()=>{guideStep++;renderGuide();runGuide();};
+  $('#gGo').onclick=runGuide;
+}
+function runGuide(){if(!lab)return;if(guideStep!==6){lab.setExplode(0);$('#explode').value=0;}GUIDE[guideStep].do();if(lab&&GUIDE[guideStep]){const s=$('#tab-peca');}}
+
+/* ================= SIMULADOR ================= */
+const SIM_STEPS=[['queixa','Queixa'],['hist','Histórico'],['codigos','Códigos'],['dados','Dados ao vivo'],['testes','Testes'],['hipotese','Diagnóstico'],['reparo','Reparo e verificação']];
+const SIM_TESTS=[
+ {k:'visual',t:'Inspeção visual dos conectores das bobinas e chicote',tempo:'5 min',pts:5,r:'Conectores firmes, sem oxidação, sem fios rompidos. Nenhum sinal de vazamento de óleo no poço das velas.',why:'Rápido e barato: elimina mau contato evidente antes de testes mais longos.'},
+ {k:'troca',t:'Troca cruzada: bobina do cilindro 2 ↔ bobina do cilindro 3',tempo:'10 min',pts:25,r:'Após apagar os códigos e rodar o motor, o scanner registra <b>P0303</b> e o contador de falhas passa a subir no <b>cilindro 3</b>. O cilindro 2 fica estável.',why:'Teste decisivo: a falha acompanhou a bobina.'},
+ {k:'vela',t:'Remover e inspecionar a vela do cilindro 2',tempo:'10 min',pts:8,r:'Eletrodo com desgaste compatível com 15.000 km, folga dentro da faixa indicada para este motor (fictício), isolador sem trincas, cor normal.',why:'Ajuda a descartar a vela como causa.'},
+ {k:'bico',t:'Verificar pulso do bico injetor 2 com caneta de polaridade (noid light)',tempo:'10 min',pts:8,r:'Pulso presente e regular, semelhante aos outros cilindros.',why:'Confirma que o comando elétrico do injetor existe.'},
+ {k:'comp',t:'Teste de compressão nos 4 cilindros',tempo:'40 min',pts:10,r:'Valores de exemplo: C1 172 · C2 170 · C3 174 · C4 171 psi. Diferença pequena entre cilindros.',why:'Descarta problema mecânico. Demorado, mas válido se feito após os testes rápidos.'},
+ {k:'lambda',t:'Substituir a sonda lambda',tempo:'30 min',pts:-15,r:'Peça trocada. O motor continua trepidando e o P0302 volta após alguns minutos.',why:'Troca de peça sem evidência: a sonda não causa falha em um único cilindro.'},
+ {k:'puxar',t:'Desconectar a bobina 2 com o motor funcionando para ouvir a queda de rotação',tempo:'2 min',pts:-10,r:'A rotação quase não muda, o que sugere que o cilindro 2 já não trabalhava. Mas o procedimento expôs você a alta tensão e pode danificar bobina, módulo e catalisador.',why:'Procedimento inseguro em ignição de bobina individual. Prefira o contador de falhas do scanner ou o desligamento do injetor pelo próprio scanner, quando disponível.'}
+];
+const SIM_HYP=[
+ {k:'bobina',t:'Bobina do cilindro 2 com defeito',ok:true,e:'Correto. A falha migrou para o cilindro 3 junto com a bobina; vela, injetor e compressão estão normais.'},
+ {k:'vela',t:'Vela do cilindro 2 desgastada',ok:false,e:'A vela tem 15.000 km e, se inspecionada, aparece em bom estado. A falha também acompanha a bobina, não a vela.'},
+ {k:'bico',t:'Bico injetor do cilindro 2 entupido',ok:false,e:'O pulso do injetor está presente e a falha muda de cilindro quando a bobina é trocada. Isso não aconteceria com um bico entupido.'},
+ {k:'comp',t:'Baixa compressão no cilindro 2',ok:false,e:'A compressão do cilindro 2 é semelhante às demais, e um problema mecânico não mudaria de cilindro com a troca da bobina.'},
+ {k:'lambda',t:'Sonda lambda com defeito',ok:false,e:'A sonda lambda afeta a mistura de todos os cilindros, não de um só. Ela não explica P0302.'}
+];
+const SIM_REP=[
+ {k:'a',t:'Substituir a bobina com defeito, apagar os códigos e fazer teste de rodagem com scanner conectado',pts:14,ok:true,e:'Reparo da causa raiz, com confirmação: é o procedimento completo.'},
+ {k:'b',t:'Substituir a bobina e as quatro velas',pts:6,ok:true,e:'Resolve, mas as velas têm 15.000 km e estavam boas. Troca desnecessária aumenta o custo para o cliente.'},
+ {k:'c',t:'Limpar os bicos injetores e apagar os códigos',pts:0,ok:false,e:'Não ataca a causa. O código voltaria assim que o motor esquentasse.'}
+];
+let S;
+function simReset(){S={step:'queixa',seen:{queixa:true},done:{},score:0,log:[],hyp:null,rep:null,tests:{},safety:false};renderSim();}
+function addPts(p,txt){S.score=Math.max(0,Math.min(100,S.score+p));S.log.push([txt,p]);}
+function renderSim(){
+  $('#simScore').textContent=S.score;
+  $('#simLog').innerHTML=S.log.length?S.log.map(l=>`<div><span>${l[0]}</span><b class="${l[1]>=0?'p':'n'}">${l[1]>=0?'+':''}${l[1]}</b></div>`).join(''):'<div><span>Comece pela queixa e pelos dados.</span></div>';
+  $('#simSteps').innerHTML=SIM_STEPS.map(([k,t])=>`<button data-k="${k}" class="${S.step===k?'on':''} ${S.seen[k]?'done':''}">${t}</button>`).join('');
+  $$('#simSteps button').forEach(b=>b.onclick=()=>{S.step=b.dataset.k;S.seen[b.dataset.k]=true;renderSim();});
+  const pane=$('#simPane'), nextBtn=k=>`<div style="margin-top:18px"><button class="btn primary" data-go="${k}">Continuar →</button></div>`;
+  const st=S.step;
+  if(st==='queixa')pane.innerHTML=`<h3>Queixa do cliente</h3><p style="font-size:17px;border-left:3px solid var(--orange);padding-left:14px">“O carro começou a tremer parado no semáforo. A luz do motor às vezes fica piscando. Na estrada parece fraco nas subidas.”</p>
+   <h4 style="margin-top:20px">Confirmação da queixa</h4><p class="muted" style="margin-top:6px">Motor em temperatura de trabalho, em marcha lenta: vibração perceptível no volante e no banco, ritmo irregular no escapamento. Luz de injeção (MIL) piscando ao acelerar levemente.</p>
+   <div class="note"><b>Por que a luz pisca?</b>Em muitos veículos a MIL piscando indica falha de combustão intensa, que pode superaquecer e danificar o catalisador. Evite rodar com o veículo nessa condição.</div>${nextBtn('hist')}`;
+  if(st==='hist')pane.innerHTML=`<h3>Histórico de manutenção</h3><div class="tbl"><table><tr><th>Km</th><th>Serviço</th></tr><tr class="mono"><td>83.500</td><td>Troca de óleo e filtro; troca das 4 velas</td></tr><tr class="mono"><td>90.000</td><td>Correia dentada e tensor</td></tr><tr class="mono"><td>96.100</td><td>Troca de óleo e filtro; limpeza do corpo de borboleta</td></tr></table></div><p class="muted" style="margin-top:10px">As velas foram trocadas há cerca de 15.000 km. Nenhuma intervenção recente nas bobinas.</p>${nextBtn('codigos')}`;
+  if(st==='codigos')pane.innerHTML=`<h3>Códigos de falha (scanner)</h3><div class="dtc"><span class="code">P0302</span><div><b>Falha de combustão detectada — cilindro 2</b><p class="muted" style="font-size:14px;margin-top:4px">Status: confirmado e ativo. O código indica onde a ECU percebeu a falha. Ele não diz qual peça causou o problema.</p></div></div><p class="muted" style="margin-top:12px">Nenhum código de mistura (P0171/P0172), de sensores ou de circuito de bobina registrado.</p>${nextBtn('dados')}`;
+  if(st==='dados'){pane.innerHTML=`<h3>Dados em tempo real (marcha lenta, 92 °C)</h3><div class="livedata">
+   <div class="alert"><small>Rotação</small><b id="ldRpm">780</b> rpm</div><div><small>Temp. motor</small><b>92</b> °C</div>
+   <div class="alert"><small>Falhas cil. 1/2/3/4</small><b id="ldMis">0 / 41 / 0 / 0</b></div><div><small>Correção curta (STFT)</small><b>+3</b> %</div>
+   <div><small>Correção longa (LTFT)</small><b>+2</b> %</div><div><small>Pressão coletor (MAP)</small><b>34</b> kPa</div>
+   <div><small>Avanço de ignição</small><b>9</b> °</div><div><small>Tensão bateria</small><b>14,1</b> V</div></div>
+   <p class="muted" style="margin-top:12px;font-size:14px">Leitura: falhas concentradas só no cilindro 2. Correções de combustível próximas de zero não sugerem entrada falsa de ar nem mistura pobre geral.</p>${nextBtn('testes')}`;}
+  if(st==='testes'){
+    pane.innerHTML=`<h3>Escolha os testes</h3><p class="muted">Cada teste tem custo de tempo. Testes relevantes somam pontos; ações sem evidência ou inseguras tiram pontos.</p>
+    <label style="display:flex;gap:10px;align-items:center;margin-top:14px;padding:10px 12px;border:1px solid var(--line2);border-radius:8px;cursor:pointer"><input type="checkbox" id="safeChk" ${S.safety?'checked disabled':''} style="accent-color:var(--ok)"> Antes de mexer nas bobinas: desligar a ignição e esperar o motor esfriar perto do cabeçote</label>
+    <div class="tests">${SIM_TESTS.map(t=>`<div class="test ${S.tests[t.k]?'used':''}"><div class="row"><span>${t.t}</span><span style="display:flex;gap:8px;align-items:center"><span class="chip">${t.tempo}</span>${S.tests[t.k]?'<span class="chip ok">Feito</span>':`<button class="btn sm" data-test="${t.k}">Executar</button>`}</span></div>${S.tests[t.k]?`<div class="result"><b>Resultado:</b> ${t.r}<div class="muted" style="margin-top:6px;font-size:13.5px">${t.why}</div></div>`:''}</div>`).join('')}</div>${nextBtn('hipotese')}`;
+    const sc=$('#safeChk');if(!S.safety)sc.onchange=()=>{if(sc.checked){S.safety=true;addPts(5,'Precaução de segurança');renderSim();}};
+    $$('[data-test]',pane).forEach(b=>b.onclick=()=>{const t=SIM_TESTS.find(x=>x.k===b.dataset.test);S.tests[t.k]=true;let p=t.pts;if(t.k==='troca'&&!S.safety){addPts(t.pts,'Troca cruzada de bobinas');addPts(-5,'Bobinas manipuladas sem precaução');}else addPts(p,t.t.split(':')[0].slice(0,38));renderSim();});
+  }
+  if(st==='hipotese'){
+    pane.innerHTML=`<h3>Qual a causa mais provável?</h3><p class="muted">Escolha com base nas evidências que você coletou.</p><div class="choice">${SIM_HYP.map(h=>`<button data-h="${h.k}" class="${S.hyp?(h.k===S.hyp?(h.ok?'right':'wrong'):(h.ok?'right':'')):''}" ${S.hyp?'disabled':''}>${h.t}</button>`).join('')}</div>${S.hyp?`<div class="fbk">${SIM_HYP.find(h=>h.k===S.hyp).e}</div>${nextBtn('reparo')}`:''}`;
+    $$('[data-h]',pane).forEach(b=>b.onclick=()=>{const h=SIM_HYP.find(x=>x.k===b.dataset.h);S.hyp=h.k;if(h.ok){if(S.tests.troca)addPts(30,'Diagnóstico confirmado por teste');else addPts(15,'Diagnóstico certo, sem confirmação');}else addPts(0,'Hipótese incorreta');renderSim();});
+  }
+  if(st==='reparo'){
+    if(!S.hyp){pane.innerHTML=`<h3>Reparo</h3><p class="muted">Defina o diagnóstico antes de propor o reparo.</p><div style="margin-top:14px"><button class="btn primary" data-go="hipotese">Ir para diagnóstico</button></div>`;}
+    else{
+    const r=S.rep&&SIM_REP.find(x=>x.k===S.rep);
+    pane.innerHTML=`<h3>Proposta de reparo</h3><div class="choice">${SIM_REP.map(x=>`<button data-r="${x.k}" class="${S.rep===x.k?(x.pts>=10?'right':x.ok?'':'wrong'):''}" ${S.rep?'disabled':''}>${x.t}</button>`).join('')}</div>
+    ${r?`<div class="fbk">${r.e}</div><h4 style="margin-top:20px">Verificação final simulada</h4>${r.ok?`<div class="livedata"><div><small>Rotação</small><b>780 ± 15</b> rpm</div><div><small>Falhas cil. 1/2/3/4</small><b>0 / 0 / 0 / 0</b></div><div><small>MIL</small><b style="color:var(--ok)">Apagada</b></div><div><small>Códigos</small><b>Nenhum</b></div></div><p style="margin-top:12px">Teste de rodagem de 15 minutos em cidade e estrada sem falhas. Veículo liberado.</p>`:`<div class="livedata"><div class="alert"><small>Falhas cil. 2</small><b>38</b></div><div class="alert"><small>Código</small><b>P0302</b></div></div><p style="margin-top:12px">A falha voltou durante o teste. O reparo não atacou a causa.</p>`}
+    <div class="fbk" style="border-color:var(--blue)"><b>Resultado final: ${S.score} pontos.</b> ${S.score>=85?'Excelente raciocínio: testes certos, na ordem certa, com segurança.':S.score>=60?'Bom caminho. Reveja quais testes realmente separam as hipóteses.':'Tente de novo começando pelos testes rápidos e decisivos.'}</div>
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" id="simAgain">Refazer o caso</button><a class="btn" href="#aula-n7-falha">Revisar a aula</a></div>`:''}`;
+    $$('[data-r]',pane).forEach(b=>b.onclick=()=>{const x=SIM_REP.find(y=>y.k===b.dataset.r);S.rep=x.k;addPts(x.pts,'Reparo proposto');P.sim.best=Math.max(P.sim.best||0,S.score);logH('Simulador Caso 01: '+S.score+' pontos');saveP();renderSim();});
+    const ag=$('#simAgain');if(ag)ag.onclick=simReset;}
+  }
+  $$('[data-go]',pane).forEach(b=>b.onclick=()=>{S.step=b.dataset.go;S.seen[S.step]=true;renderSim();$('#simSteps').scrollIntoView({block:'nearest'});});
+}
+$('#simReset').onclick=simReset;
+setInterval(()=>{const r=$('#ldRpm');if(r&&$('#v-simulador').classList.contains('on')){r.textContent=Math.round(700+Math.random()*180);const m=$('#ldMis');if(m){m.dataset.n=(+(m.dataset.n||41))+(Math.random()<.6?1:0);m.textContent='0 / '+m.dataset.n+' / 0 / 0';}}},700);
+
+/* ================= FERRAMENTAS ================= */
+function renderTools(){
+  $('#t-cil').innerHTML=`<h3>Cilindrada e taxa de compressão</h3><p class="desc">V = π/4 × D² × C × N; taxa = (Vd + Vc) ÷ Vc. Exemplo: motor 1.6 com 79,0 × 81,5 mm.</p><div id="tcilw"></div>`;mountCil($('#tcilw'),'tc');
+  $('#t-pot').innerHTML=`<h3>Potência a partir do torque</h3><p class="desc">P [kW] = T [N·m] × n [rpm] ÷ 9.549. Exemplo: 150 N·m a 4.000 rpm.</p>
+   <div class="fgrid"><div class="field"><label for="pT">Torque (N·m)</label><input id="pT" type="number" value="150"></div><div class="field"><label for="pN">Rotação (rpm)</label><input id="pN" type="number" value="4000"></div></div>
+   <div class="out"><div class="readout" style="margin-top:0"><div><small>kW</small><b id="pkw"></b></div><div><small>cv</small><b id="pcv" style="color:var(--orange)"></b></div><div><small>hp</small><b id="php"></b></div></div><p id="pex"></p></div>`;
+  const up=()=>{const t=+$('#pT').value,n=+$('#pN').value,kw=t*n/9549;$('#pkw').textContent=fmt(kw,1);$('#pcv').textContent=fmt(kw/0.7355,1);$('#php').textContent=fmt(kw/0.7457,1);$('#pex').textContent=`${fmt(t,0)} × ${n.toLocaleString('pt-BR')} ÷ 9.549 = ${fmt(kw,2)} kW. 1 cv = 0,7355 kW; 1 hp = 0,7457 kW.`;};
+  ['pT','pN'].forEach(i=>$('#'+i).addEventListener('input',up));up();
+  $('#t-rel').innerHTML=`<h3>Relação de transmissão</h3><p class="desc">i = dentes da engrenagem movida ÷ dentes da motora. Rotação de saída = entrada ÷ i; torque de saída ideal = entrada × i (sem perdas). Exemplo: par de 1ª marcha didático.</p>
+   <div class="fgrid"><div class="field"><label for="rA">Dentes motora</label><input id="rA" type="number" value="11"></div><div class="field"><label for="rB">Dentes movida</label><input id="rB" type="number" value="41"></div><div class="field"><label for="rN">Rotação entrada (rpm)</label><input id="rN" type="number" value="3000"></div><div class="field"><label for="rT">Torque entrada (N·m)</label><input id="rT" type="number" value="140"></div></div>
+   <div class="out"><div class="readout" style="margin-top:0"><div><small>Relação</small><b id="ri" style="color:var(--orange)"></b></div><div><small>Rotação saída</small><b id="rno"></b></div><div><small>Torque saída</small><b id="rto"></b></div></div><p id="rex"></p></div>`;
+  const ur=()=>{const a=+$('#rA').value,b=+$('#rB').value,n=+$('#rN').value,t=+$('#rT').value,i=a>0?b/a:NaN;$('#ri').textContent=isFinite(i)?fmt(i,2)+' : 1':'—';$('#rno').textContent=isFinite(i)?fmt(n/i,0)+' rpm':'—';$('#rto').textContent=isFinite(i)?fmt(t*i,0)+' N·m':'—';$('#rex').textContent=isFinite(i)?`${b} ÷ ${a} = ${fmt(i,3)}. ${i>1?'Redução: menos rotação, mais torque.':i<1?'Sobremarcha: mais rotação, menos torque.':'Direta.'} Na prática há perdas por atrito de alguns por cento.`:'';};
+  ['rA','rB','rN','rT'].forEach(i=>$('#'+i).addEventListener('input',ur));ur();
+  const U={pressao:{bar:1,psi:0.0689476,kPa:0.01,'kgf/cm²':0.980665},torque:{'N·m':1,'kgf·m':9.80665,'lbf·ft':1.35582},potencia:{kW:1,cv:0.7355,hp:0.7457}};
+  $('#t-conv').innerHTML=`<h3>Conversor de unidades</h3><p class="desc">Pressão, torque, potência e temperatura.</p>
+   <div class="fgrid"><div class="field"><label for="cG">Grandeza</label><select id="cG"><option value="pressao">Pressão</option><option value="torque">Torque</option><option value="potencia">Potência</option><option value="temp">Temperatura</option></select></div>
+   <div class="field"><label for="cV">Valor</label><input id="cV" type="number" value="2.2" step="any"></div><div class="field"><label for="cU">De</label><select id="cU"></select></div></div>
+   <div class="out"><div class="readout" id="cOut" style="margin-top:0"></div><p>Exemplo: 2,2 bar é uma pressão típica de pneu de carro de passeio; o valor correto para cada carro está na etiqueta da porta ou no manual.</p></div>`;
+  const fillU=()=>{const g=$('#cG').value;const us=g==='temp'?['°C','°F','K']:Object.keys(U[g]);$('#cU').innerHTML=us.map(u=>`<option>${u}</option>`).join('');};
+  const uc=()=>{const g=$('#cG').value,v=+$('#cV').value,u=$('#cU').value;let out=[];
+    if(g==='temp'){const c=u==='°C'?v:u==='°F'?(v-32)*5/9:v-273.15;out=[['°C',c],['°F',c*9/5+32],['K',c+273.15]];}
+    else{const base=v*U[g][u];out=Object.keys(U[g]).map(k=>[k,base/U[g][k]]);}
+    $('#cOut').innerHTML=out.map(o=>`<div><small>${o[0]}</small><b>${fmt(o[1],Math.abs(o[1])<10?3:1)}</b></div>`).join('');};
+  $('#cG').addEventListener('change',()=>{fillU();$('#cV').value={pressao:2.2,torque:150,potencia:100,temp:90}[$('#cG').value];uc();});
+  ['cV','cU'].forEach(i=>$('#'+i).addEventListener('input',uc));fillU();uc();
+  $('#t-obd').innerHTML=`<h3>Dicionário de códigos OBD-II genéricos</h3><p class="desc">Códigos do padrão SAE J2012 / ISO 15031-6. O código indica onde a ECU detectou a anomalia, não qual peça trocar. Fabricantes também usam códigos próprios (P1xxx e outros), que exigem a documentação do veículo.</p>
+   <div class="tbl"><table><tr><th>Código</th><th>Significado</th><th>Causas a investigar</th><th>Ressalva</th></tr>${OBD.map(o=>`<tr><td class="mono" style="color:var(--warn)">${o[0]}</td><td>${o[1]}</td><td>${o[2]}</td><td class="muted">${o[3]}</td></tr>`).join('')}</table></div>`;
+  $('#t-ferr').innerHTML=`<h3>Ferramentas de oficina e suas aplicações</h3><div class="tbl" style="margin-top:10px"><table><tr><th>Ferramenta</th><th>Para que serve</th><th>Nível</th></tr>${TOOLS.map(t=>`<tr><td><b>${t[0]}</b></td><td>${t[1]}</td><td><span class="chip ${t[2]==='Iniciante'?'ok':t[2]==='Profissional'?'orange':'blue'}">${t[2]}</span></td></tr>`).join('')}</table></div>`;
+}
+const OBD=[
+ ['P0300','Falha de combustão aleatória/múltiplos cilindros','Entrada falsa de ar, pressão de combustível baixa, combustível adulterado, ignição','Vários cilindros apontam para causa comum'],
+ ['P0301–P0308','Falha de combustão no cilindro 1 a 8','Bobina, vela, injetor, compressão daquele cilindro','Use troca cruzada para separar causas'],
+ ['P0171','Mistura pobre (banco 1)','Entrada falsa de ar, MAF sujo, pressão de combustível baixa','Raramente é a sonda lambda em si'],
+ ['P0172','Mistura rica (banco 1)','Injetor gotejando, pressão alta, sensor de temperatura informando frio','Confira correções de combustível'],
+ ['P0128','Temperatura do motor abaixo da esperada','Válvula termostática presa aberta, sensor de temperatura','Comum em clima frio com termostática ruim'],
+ ['P0335','Circuito do sensor de posição do virabrequim','Sensor, chicote, conector, roda fônica','Pode impedir a partida'],
+ ['P0420','Eficiência do catalisador abaixo do limite (banco 1)','Catalisador, sonda pós-catalisador, vazamento no escape','Corrija falhas de combustão antes de trocar o catalisador'],
+ ['P0113','Sensor de temperatura do ar: sinal alto','Sensor desconectado, chicote aberto','Sinal “alto” costuma indicar circuito aberto'],
+ ['P0562','Tensão do sistema baixa','Alternador, bateria, correia, aterramento','Meça tensão de carga com o motor ligado']];
+const TOOLS=[
+ ['Jogo de chaves combinadas e soquetes','Remover e apertar porcas e parafusos.','Iniciante'],
+ ['Torquímetro','Apertar fixações com o torque especificado pelo fabricante.','Intermediário'],
+ ['Macaco e cavaletes','Erguer e apoiar o veículo com segurança. Nunca trabalhe sob um carro apoiado só no macaco.','Iniciante'],
+ ['Multímetro automotivo','Medir tensão, resistência, continuidade e corrente.','Intermediário'],
+ ['Scanner OBD-II','Ler e apagar códigos e ver parâmetros em tempo real.','Intermediário'],
+ ['Medidor de compressão','Medir a pressão de cada cilindro na partida.','Intermediário'],
+ ['Estetoscópio mecânico','Localizar a origem de ruídos internos.','Intermediário'],
+ ['Micrômetro e súbito','Medir colos do virabrequim e diâmetro de cilindros.','Profissional'],
+ ['Relógio comparador','Medir empenos, folgas axiais e excentricidade.','Profissional'],
+ ['Osciloscópio automotivo','Analisar a forma de onda de sensores e atuadores.','Profissional'],
+ ['EPIs para alta tensão (luvas classe 0, ferramentas isoladas)','Trabalho em híbridos e elétricos, somente por profissionais treinados.','Profissional']];
+
+/* ================= GLOSSÁRIO ================= */
+const GLOSS=[
+ ['PMS','Motor','Ponto morto superior: posição mais alta do pistão no cilindro.'],
+ ['PMI','Motor','Ponto morto inferior: posição mais baixa do pistão.'],
+ ['Cilindrada','Motor','Volume varrido pelos pistões entre PMI e PMS, somando todos os cilindros.'],
+ ['Taxa de compressão','Motor','Razão entre o volume do cilindro com o pistão no PMI e o volume com o pistão no PMS.'],
+ ['Curso','Motor','Distância percorrida pelo pistão entre PMS e PMI.'],
+ ['Biela','Motor','Haste que liga o pistão ao virabrequim.'],
+ ['Virabrequim','Motor','Eixo de manivelas que converte o movimento alternado dos pistões em rotação.'],
+ ['Comando de válvulas','Motor','Eixo com cames que abre e fecha as válvulas, girando na metade da rotação do virabrequim.'],
+ ['Bronzina','Motor','Casquilho deslizante entre o virabrequim e a biela ou o bloco, lubrificado sob pressão.'],
+ ['Junta de cabeçote','Motor','Vedação entre bloco e cabeçote para gases, óleo e líquido de arrefecimento.'],
+ ['Detonação','Motor','Queima espontânea e descontrolada de parte da mistura; produz a “batida de pino” e pode danificar pistões.'],
+ ['Avanço de ignição','Ignição','Ângulo antes do PMS em que a faísca acontece.'],
+ ['Bobina de ignição','Ignição','Transformador que eleva a tensão da bateria para gerar a faísca da vela.'],
+ ['Sonda lambda','Injeção','Sensor no escape que informa à ECU se a mistura está rica ou pobre.'],
+ ['Relação estequiométrica','Injeção','Proporção ar/combustível em que todo o combustível reage com todo o oxigênio; para gasolina pura é cerca de 14,7:1 em massa.'],
+ ['Sensor MAP','Injeção','Mede a pressão absoluta no coletor de admissão para a ECU estimar a carga do motor.'],
+ ['Sensor MAF','Injeção','Mede a massa de ar que entra no motor.'],
+ ['Correção de combustível','Injeção','Ajuste percentual que a ECU aplica à injeção com base na sonda lambda (STFT curto prazo, LTFT longo prazo).'],
+ ['ECU','Eletrônica','Unidade de controle eletrônico: módulo que lê sensores e comanda atuadores.'],
+ ['Rede CAN','Eletrônica','Rede de comunicação digital por onde os módulos do veículo trocam informações.'],
+ ['Lei de Ohm','Eletrônica','Tensão = corrente × resistência (V = I × R).'],
+ ['Relé','Eletrônica','Interruptor eletromagnético: uma corrente pequena comanda uma corrente maior.'],
+ ['OBD-II','Diagnóstico','Padrão de diagnóstico de bordo com conector e códigos de falha genéricos.'],
+ ['DTC','Diagnóstico','Código de falha gravado pela ECU quando detecta uma anomalia.'],
+ ['MIL','Diagnóstico','Luz indicadora de mau funcionamento: a “luz da injeção” no painel.'],
+ ['Torque','Física','Tendência de uma força fazer um corpo girar: força × braço de alavanca, em N·m.'],
+ ['Potência','Física','Trabalho realizado por unidade de tempo. No motor: torque × velocidade angular.'],
+ ['Diferencial','Transmissão','Conjunto de engrenagens que divide o torque entre as rodas e permite rotações diferentes em curvas.'],
+ ['Junta homocinética','Transmissão','Junta que transmite rotação com velocidade constante mesmo com o semieixo inclinado.'],
+ ['Relação de transmissão','Transmissão','Razão entre as rotações de entrada e saída de um par de engrenagens.'],
+ ['Embreagem','Transmissão','Acopla e desacopla o motor do câmbio por atrito.'],
+ ['ABS','Freios','Sistema que modula a pressão de freio para evitar o travamento das rodas.'],
+ ['McPherson','Suspensão','Suspensão em que o amortecedor faz parte da estrutura que guia a roda.'],
+ ['Cambagem','Suspensão','Inclinação da roda vista de frente em relação à vertical.']];
+let gcat='Todos';
+function renderGloss(){
+  const cats=['Todos',...new Set(GLOSS.map(g=>g[1]))];
+  $('#gcat').innerHTML=cats.map(c=>`<button class="${c===gcat?'on':''}" data-c="${c}">${c}</button>`).join('');
+  $$('#gcat button').forEach(b=>b.onclick=()=>{gcat=b.dataset.c;renderGloss();});
+  const q=$('#gq').value.trim().toLowerCase();
+  const list=GLOSS.filter(g=>(gcat==='Todos'||g[1]===gcat)&&(!q||(g[0]+' '+g[2]).toLowerCase().includes(q))).sort((a,b)=>a[0].localeCompare(b[0],'pt'));
+  $('#glossBox').innerHTML=list.length?list.map(g=>`<div class="gterm"><span class="chip cat">${g[1]}</span><b>${g[0]}</b><p>${g[2]}</p></div>`).join(''):'<p class="muted">Nenhum termo encontrado. Tente outra palavra.</p>';
+}
+$('#gq').addEventListener('input',renderGloss);
+$('#gcat').style.flexWrap='wrap';
+
+/* ================= PROGRESSO ================= */
+function renderProgress(){
+  $('#pLevels').innerHTML=LEVELS.map(l=>{const t=l.lessons.length,d=l.lessons.filter(i=>P.lessons[i]).length;return `<div class="plevel"><span class="n">${String(l.n).padStart(2,'0')}</span><div><a href="#nivel-${l.n}" style="color:var(--fg);text-decoration:none">${l.t}</a><div class="bar" style="margin-top:6px"><i style="width:${t?d/t*100:0}%"></i></div></div><span class="mono muted" style="text-align:right;font-size:12.5px">${t?d+'/'+t:'em breve'}</span></div>`;}).join('')+
+   `<div class="plevel" style="border:none"><span class="n">SIM</span><div>Simulador · Caso 01</div><span class="mono" style="text-align:right">${P.sim.best||0} pts</span></div>`;
+  const next=LESSON_IDS.find(id=>!P.lessons[id]);
+  $('#pRec').innerHTML=next?`<p class="muted">Próxima aula sugerida:</p><a class="btn primary" style="margin-top:10px" href="#aula-${next}">${LESSONS[next].t}</a>`:(P.sim.best<85?`<p class="muted">Você concluiu todas as aulas disponíveis. Tente passar de 85 pontos no simulador.</p><a class="btn primary" style="margin-top:10px" href="#simulador">Ir para o simulador</a>`:'<p>Tudo concluído por enquanto. Novos níveis serão liberados em breve.</p>');
+  const favs=Object.keys(P.fav).filter(k=>LESSONS[k]);
+  $('#pFav').innerHTML=favs.length?favs.map(k=>`<a href="#aula-${k}" style="display:block;padding:4px 0">★ ${LESSONS[k].t}</a>`).join(''):'<p class="muted" style="font-size:14px">Use “Favoritar” em uma aula para guardá-la aqui.</p>';
+  $('#pHist').innerHTML=P.hist.length?P.hist.map(h=>`<div><time>${new Date(h.t).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} ${new Date(h.t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</time><span>${h.txt}</span></div>`).join(''):'<p class="muted" style="font-size:14px">Nenhuma atividade ainda.</p>';
+  $('#resetBox').innerHTML=`<button class="btn sm" id="resetBtn">Apagar progresso</button>`;
+  $('#resetBtn').onclick=()=>{$('#resetBox').innerHTML=`<span class="muted" style="font-size:13.5px;margin-right:8px">Apagar tudo neste navegador?</span><button class="btn sm" id="rNo">Cancelar</button> <button class="btn sm" style="border-color:var(--bad);color:var(--bad)" id="rYes">Apagar</button>`;
+   $('#rNo').onclick=renderProgress;$('#rYes').onclick=()=>{P={lessons:{},quiz:{},fav:{},sim:{best:0},hist:[]};saveP();renderProgress();renderTrails();};};
+}
+
+/* ================= BUSCA GLOBAL ================= */
+const IDX=[];
+LESSON_IDS.forEach(id=>IDX.push({t:LESSONS[id].t,s:'Aula · Nível '+LESSONS[id].lv,h:'#aula-'+id,x:LESSONS[id].obj+' '+LESSONS[id].tec.replace(/<[^>]+>/g,' ')}));
+LEVELS.forEach(l=>IDX.push({t:'Nível '+l.n+': '+l.t,s:'Curso',h:'#nivel-'+l.n,x:l.d+' '+l.topics.join(' ')}));
+Object.keys(PARTS).forEach(k=>IDX.push({t:PARTS[k].nome,s:'Peça · Laboratório 3D',h:'#laboratorio',part:k,x:PARTS[k].funcao+' '+PARTS[k].sint.join(' ')}));
+GLOSS.forEach(g=>IDX.push({t:g[0],s:'Glossário · '+g[1],h:'#glossario',gq:g[0],x:g[2]}));
+OBD.forEach(o=>IDX.push({t:o[0]+' '+o[1],s:'Código OBD-II',h:'#ferramentas',x:o[2]}));
+[['Calculadora de cilindrada','cilindrada taxa compressão'],['Calculadora de potência','torque potência cv kW hp'],['Relação de transmissão','engrenagem marcha câmbio'],['Conversor de unidades','bar psi kgf temperatura']].forEach(t=>IDX.push({t:t[0],s:'Ferramenta',h:'#ferramentas',x:t[1]}));
+IDX.push({t:'Caso 01: motor trepidando',s:'Simulador',h:'#simulador',x:'falha combustão misfire P0302 bobina vela marcha lenta tremendo'});
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+IDX.forEach(i=>{i.n=norm(i.t);i.nx=norm(i.x);});
+let qsel=-1;
+function doSearch(){
+  const q=norm($('#q').value.trim()), box=$('#qres');
+  if(q.length<2){box.hidden=true;return;}
+  const words=q.split(/\s+/);
+  const res=IDX.map(i=>{let s=0;words.forEach(w=>{if(i.n.includes(w))s+=i.n.startsWith(w)?5:3;else if(i.nx.includes(w))s+=1;else s-=10;});return [s,i];}).filter(r=>r[0]>0).sort((a,b)=>b[0]-a[0]).slice(0,8);
+  qsel=-1;
+  box.innerHTML=res.length?res.map((r,j)=>`<a href="${r[1].h}" data-j="${j}">${r[1].t}<small>${r[1].s}</small></a>`).join(''):'<div style="padding:10px;color:var(--muted);font-size:14px">Nada encontrado. Tente “pistão”, “P0302” ou “torque”.</div>';
+  box.hidden=false;
+  $$('a',box).forEach(a=>a.addEventListener('click',()=>{const r=res[+a.dataset.j][1];goResult(r);}));
+  box._res=res;
+}
+function goResult(r){
+  $('#qres').hidden=true;$('#q').value='';
+  if(r.part){setTimeout(()=>{initLab();if(lab)lab.select(r.part);showTab('peca');renderPart(r.part);},50);}
+  if(r.gq){$('#gq').value=r.gq;renderGloss();}
+}
+$('#q').addEventListener('input',doSearch);
+$('#q').addEventListener('keydown',e=>{const box=$('#qres'),as=$$('a',box);if(!as.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();qsel=Math.min(as.length-1,qsel+1);}else if(e.key==='ArrowUp'){e.preventDefault();qsel=Math.max(0,qsel-1);}
+  else if(e.key==='Enter'){e.preventDefault();const a=as[Math.max(0,qsel)];location.hash=a.getAttribute('href');goResult(box._res[+a.dataset.j][1]);return;}
+  else if(e.key==='Escape'){box.hidden=true;return;}
+  as.forEach((a,j)=>a.classList.toggle('hl',j===qsel));});
+document.addEventListener('click',e=>{if(!e.target.closest('.search'))$('#qres').hidden=true;});
+
+/* ================= INIT ================= */
+renderTrails();renderPath();
+$('#sysChips').innerHTML=Object.keys(SYS).map(k=>`<button data-sys="${k}">${SYS[k].t}</button>`).join('');
+$$('#sysChips button').forEach(b=>b.onclick=()=>showSys(b.dataset.sys));
+$$('.hot').forEach(g=>{g.setAttribute('tabindex','0');g.setAttribute('role','button');g.addEventListener('click',()=>showSys(g.dataset.sys));g.addEventListener('keydown',e=>{if(e.key==='Enter'){showSys(g.dataset.sys);}});});
+showSys('motor');
+renderTools();renderGloss();simReset();
+$('#statLessons').textContent=LESSON_IDS.length;
+hero=createEngineViewer($('#heroViewer'),{N:4,autoRotate:true,zoom:false});
+if(hero){hero.on('tick',A=>{const s=strokeOf(A);const el=$('#heroHud');const t='CIL. 1 · <b>'+s.nome.toUpperCase()+'</b>';if(el.innerHTML!==t)el.innerHTML=t;});}
+route();
+</script>
+
+</body>
+</html>
